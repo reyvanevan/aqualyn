@@ -1365,10 +1365,11 @@ break;
         ];
 
         const buttonMessage = {
-          text: "🧪 *Test Button Message*\n\nIni adalah testing fitur button message dari baileys-mod!",
+          text: "🧪 *Test Button Message*\n\nIni adalah testing fitur button message dari baileys-mod dengan AI icon!",
           footer: `© ${global.botName} - Powered by baileys-mod`,
           buttons,
-          headerType: 1
+          headerType: 1,
+          ai: true
         };
 
         await client.sendMessage(m.chat, buttonMessage, { quoted: m });
@@ -1387,10 +1388,11 @@ break;
 
         const buttonMessage = {
           image: { url: "https://i.ibb.co/Ks39bYb/image.png" },
-          caption: "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari baileys-mod!",
+          caption: "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari baileys-mod dan AI icon!",
           footer: `© ${global.botName} - Advanced WhatsApp Bot`,
           buttons,
-          headerType: 1
+          headerType: 1,
+          ai: true
         };
 
         await client.sendMessage(m.chat, buttonMessage, { quoted: m });
@@ -1427,13 +1429,57 @@ break;
         ];
 
         const interactiveMessage = {
-          text: "⚡ *Test Interactive Message*\n\nIni adalah testing fitur interactive message dengan berbagai jenis button!",
+          text: "⚡ *Test Interactive Message*\n\nIni adalah testing fitur interactive message dengan berbagai jenis button dan AI icon!",
           title: "Interactive Message Test",
           footer: `© ${global.botName} - baileys-mod features`,
-          interactiveButtons
+          interactiveButtons,
+          ai: true
         };
 
         await client.sendMessage(m.chat, interactiveMessage, { quoted: m });
+        break;
+      }
+
+      // Test AI Icon Feature
+      case 'testai': {
+        if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
+        
+        // Regular message without AI icon
+        await client.sendMessage(m.chat, { 
+          text: "📨 *Regular Message*\n\nIni adalah pesan biasa tanpa AI icon."
+        }, { quoted: m });
+        
+        // Wait a moment
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Message with AI icon
+        await client.sendMessage(m.chat, { 
+          text: "🤖 *AI Message*\n\nIni adalah pesan dengan AI icon yang menunjukkan bahwa pesan ini dari bot AI!",
+          ai: true
+        }, { quoted: m });
+        
+        break;
+      }
+
+      // Test Album Message with AI
+      case 'testalbum': {
+        if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
+        
+        const media = [
+          {
+            image: { url: "https://i.ibb.co/Ks39bYb/image.png" }
+          },
+          {
+            image: { url: "https://i.ibb.co/4SqH9gP/image2.png" }
+          }
+        ];
+
+        await client.sendMessage(m.chat, { 
+          album: media, 
+          caption: "🖼️ *Test Album Message*\n\nIni adalah testing fitur album message dengan AI icon!",
+          ai: true
+        }, { quoted: m });
+        
         break;
       }
 
