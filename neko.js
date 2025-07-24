@@ -209,6 +209,29 @@ function saveGroupConfig(config) {
                 return path_file
         	}
         }
+
+    // Helper function untuk download dan prepare media gambar
+    async function downloadAndPrepareImage(imageUrls) {
+        for (let i = 0; i < imageUrls.length; i++) {
+            try {
+                console.log(`🔄 Mencoba download gambar dari: ${imageUrls[i]}`);
+                
+                // Download gambar menggunakan fungsi getBuffer yang sudah ada
+                const imageBuffer = await getBuffer(imageUrls[i]);
+                
+                if (imageBuffer && !imageBuffer.message && Buffer.isBuffer(imageBuffer)) {
+                    // Prepare media menggunakan baileys-mod
+                    const preparedMedia = await prepareWAMessageMedia({ image: imageBuffer }, { upload: client.waUploadToServer });
+                    console.log(`✅ Berhasil memuat gambar dari: ${imageUrls[i]}`);
+                    return { success: true, media: preparedMedia.image, url: imageUrls[i] };
+                }
+            } catch (error) {
+                console.log(`❌ Gagal memuat gambar dari ${imageUrls[i]}:`, error.message);
+                continue;
+            }
+        }
+        return { success: false, media: null, url: null };
+    }
       
     const sendContact = (jid, numbers, name, quoted, mn) => {
       let number = numbers.replace(/[^0-9]/g, '')
@@ -1387,7 +1410,7 @@ break;
         ];
 
         const buttonMessage = {
-          image: { url: "https://via.placeholder.com/500x300/4a90e2/ffffff?text=Test+Button+Image" },
+          image: { url: "https://picsum.photos/500/300" },
           caption: "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari baileys-mod dan AI icon!",
           footer: `© ${global.botName} - Advanced WhatsApp Bot`,
           buttons,
@@ -1395,19 +1418,65 @@ break;
           ai: true
         };
 
-        try {
-          await client.sendMessage(m.chat, buttonMessage, { quoted: m });
-        } catch (error) {
-          console.log('❌ Image button failed, sending text button instead:', error.message);
-          // Fallback ke text button jika image gagal
-          const fallbackMessage = {
-            text: "🖼️ *Test Button Message*\n\n⚠️ Gambar tidak dapat dimuat, tetapi button tetap berfungsi!\n\nIni adalah testing fitur button message dari baileys-mod dengan AI icon!",
+        // Array URL gambar dengan fallback
+        const imageUrls = [
+          "https://picsum.photos/500/300", // Random image dari Picsum
+          "https://via.placeholder.com/500x300/4a90e2/ffffff?text=Test+Button+Image", // Placeholder backup
+          "https://dummyimage.com/500x300/4a90e2/ffffff&text=Button+Test" // Fallback kedua
+        ];
+
+        let success = false;
+        let finalButtonMessage = buttonMessage;
+
+        // Coba menggunakan getBuffer untuk download gambar
+        for (let i = 0; i < imageUrls.length && !success; i++) {
+          try {
+            console.log(`🔄 Mencoba download gambar ${i + 1}: ${imageUrls[i]}`);
+            
+            // Download gambar menggunakan fungsi getBuffer yang sudah ada
+            const imageBuffer = await getBuffer(imageUrls[i]);
+            
+            if (imageBuffer && !imageBuffer.message && Buffer.isBuffer(imageBuffer)) {
+              // Prepare media menggunakan baileys-mod
+              const preparedMedia = await prepareWAMessageMedia({ image: imageBuffer }, { upload: client.waUploadToServer });
+              
+              finalButtonMessage = {
+                ...buttonMessage,
+                image: preparedMedia.image,
+                caption: `🖼️ *Test Button dengan Image*\n\nGambar berhasil dimuat dari: ${imageUrls[i]}\n\nIni adalah testing fitur button message dengan gambar dari baileys-mod dan AI icon!`
+              };
+              
+              success = true;
+              console.log(`✅ Berhasil memuat gambar dari: ${imageUrls[i]}`);
+              break;
+            }
+          } catch (error) {
+            console.log(`❌ Gagal memuat gambar ${i + 1}:`, error.message);
+            continue;
+          }
+        }
+
+        // Jika semua URL gagal, gunakan fallback text message
+        if (!success) {
+          console.log('⚠️ Semua URL gambar gagal, menggunakan text fallback');
+          finalButtonMessage = {
+            text: "🖼️ *Test Button Message*\n\n⚠️ Semua sumber gambar tidak dapat dimuat, tetapi button tetap berfungsi!\n\nIni adalah testing fitur button message dari baileys-mod dengan AI icon!",
             footer: `© ${global.botName} - Advanced WhatsApp Bot`,
             buttons,
             headerType: 1,
             ai: true
           };
-          await client.sendMessage(m.chat, fallbackMessage, { quoted: m });
+        }
+
+        try {
+          await client.sendMessage(m.chat, finalButtonMessage, { quoted: m });
+        } catch (error) {
+          console.log('❌ Pengiriman pesan gagal:', error.message);
+          // Ultimate fallback - simple text message
+          await client.sendMessage(m.chat, {
+            text: "❌ *Error pada Test Button*\n\nTerjadi kesalahan saat mengirim button message. Silakan coba lagi nanti.",
+            ai: true
+          }, { quoted: m });
         }
         break;
       }
@@ -1478,25 +1547,74 @@ break;
       case 'testalbum': {
         if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
         
-        const media = [
-          {
-            image: { url: "https://via.placeholder.com/400x400/ff6b6b/ffffff?text=Image+1" }
-          },
-          {
-            image: { url: "https://via.placeholder.com/400x400/4ecdc4/ffffff?text=Image+2" }
-          }
+        // Array URL gambar dengan fallback
+        const imageUrls = [
+          "https://picsum.photos/500/300", // Random image dari Picsum
+          "https://via.placeholder.com/500x300/4a90e2/ffffff?text=Test+Album+1", // Placeholder backup
+          "https://dummyimage.com/500x300/4a90e2/ffffff&text=Album+Test+1" // Fallback kedua
         ];
 
+        const imageUrls2 = [
+          "https://picsum.photos/500/400", // Random image dari Picsum
+          "https://via.placeholder.com/500x400/e74c3c/ffffff?text=Test+Album+2", // Placeholder backup
+          "https://dummyimage.com/500x400/e74c3c/ffffff&text=Album+Test+2" // Fallback kedua
+        ];
+
+        let albumMedia = [];
+        let successCount = 0;
+
+        // Download gambar pertama
+        for (let i = 0; i < imageUrls.length; i++) {
+          try {
+            console.log(`🔄 Mencoba download gambar album 1 dari: ${imageUrls[i]}`);
+            const imageBuffer = await getBuffer(imageUrls[i]);
+            
+            if (imageBuffer && !imageBuffer.message && Buffer.isBuffer(imageBuffer)) {
+              const preparedMedia = await prepareWAMessageMedia({ image: imageBuffer }, { upload: client.waUploadToServer });
+              albumMedia.push({ image: preparedMedia.image });
+              successCount++;
+              console.log(`✅ Berhasil memuat gambar album 1 dari: ${imageUrls[i]}`);
+              break;
+            }
+          } catch (error) {
+            console.log(`❌ Gagal memuat gambar album 1 dari ${imageUrls[i]}:`, error.message);
+            continue;
+          }
+        }
+
+        // Download gambar kedua
+        for (let i = 0; i < imageUrls2.length; i++) {
+          try {
+            console.log(`🔄 Mencoba download gambar album 2 dari: ${imageUrls2[i]}`);
+            const imageBuffer = await getBuffer(imageUrls2[i]);
+            
+            if (imageBuffer && !imageBuffer.message && Buffer.isBuffer(imageBuffer)) {
+              const preparedMedia = await prepareWAMessageMedia({ image: imageBuffer }, { upload: client.waUploadToServer });
+              albumMedia.push({ image: preparedMedia.image });
+              successCount++;
+              console.log(`✅ Berhasil memuat gambar album 2 dari: ${imageUrls2[i]}`);
+              break;
+            }
+          } catch (error) {
+            console.log(`❌ Gagal memuat gambar album 2 dari ${imageUrls2[i]}:`, error.message);
+            continue;
+          }
+        }
+
         try {
-          await client.sendMessage(m.chat, { 
-            album: media, 
-            caption: "🖼️ *Test Album Message*\n\nIni adalah testing fitur album message dengan AI icon!",
-            ai: true
-          }, { quoted: m });
+          if (successCount > 0) {
+            await client.sendMessage(m.chat, { 
+              album: albumMedia, 
+              caption: `🖼️ *Test Album Message*\n\nBerhasil memuat ${successCount} gambar untuk album!\n\nIni adalah testing fitur album message dengan AI icon!`,
+              ai: true
+            }, { quoted: m });
+          } else {
+            throw new Error('Tidak ada gambar yang berhasil dimuat');
+          }
         } catch (error) {
           console.log('❌ Album failed, sending text message instead:', error.message);
           await client.sendMessage(m.chat, {
-            text: "🖼️ *Test Album Message*\n\n⚠️ Album tidak dapat dimuat, tetapi fitur AI icon tetap berfungsi!\n\nIni seharusnya menampilkan multiple gambar dalam satu pesan.",
+            text: "🖼️ *Test Album Message*\n\n⚠️ Album tidak dapat dimuat karena semua sumber gambar gagal!\n\nTetapi fitur AI icon tetap berfungsi. Ini seharusnya menampilkan multiple gambar dalam satu pesan.",
             ai: true
           }, { quoted: m });
         }
