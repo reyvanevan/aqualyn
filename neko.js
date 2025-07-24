@@ -1387,7 +1387,7 @@ break;
         ];
 
         const buttonMessage = {
-          image: { url: "https://i.ibb.co/Ks39bYb/image.png" },
+          image: { url: "https://via.placeholder.com/500x300/4a90e2/ffffff?text=Test+Button+Image" },
           caption: "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari baileys-mod dan AI icon!",
           footer: `© ${global.botName} - Advanced WhatsApp Bot`,
           buttons,
@@ -1395,7 +1395,20 @@ break;
           ai: true
         };
 
-        await client.sendMessage(m.chat, buttonMessage, { quoted: m });
+        try {
+          await client.sendMessage(m.chat, buttonMessage, { quoted: m });
+        } catch (error) {
+          console.log('❌ Image button failed, sending text button instead:', error.message);
+          // Fallback ke text button jika image gagal
+          const fallbackMessage = {
+            text: "🖼️ *Test Button Message*\n\n⚠️ Gambar tidak dapat dimuat, tetapi button tetap berfungsi!\n\nIni adalah testing fitur button message dari baileys-mod dengan AI icon!",
+            footer: `© ${global.botName} - Advanced WhatsApp Bot`,
+            buttons,
+            headerType: 1,
+            ai: true
+          };
+          await client.sendMessage(m.chat, fallbackMessage, { quoted: m });
+        }
         break;
       }
 
@@ -1467,18 +1480,26 @@ break;
         
         const media = [
           {
-            image: { url: "https://i.ibb.co/Ks39bYb/image.png" }
+            image: { url: "https://via.placeholder.com/400x400/ff6b6b/ffffff?text=Image+1" }
           },
           {
-            image: { url: "https://i.ibb.co/4SqH9gP/image2.png" }
+            image: { url: "https://via.placeholder.com/400x400/4ecdc4/ffffff?text=Image+2" }
           }
         ];
 
-        await client.sendMessage(m.chat, { 
-          album: media, 
-          caption: "🖼️ *Test Album Message*\n\nIni adalah testing fitur album message dengan AI icon!",
-          ai: true
-        }, { quoted: m });
+        try {
+          await client.sendMessage(m.chat, { 
+            album: media, 
+            caption: "🖼️ *Test Album Message*\n\nIni adalah testing fitur album message dengan AI icon!",
+            ai: true
+          }, { quoted: m });
+        } catch (error) {
+          console.log('❌ Album failed, sending text message instead:', error.message);
+          await client.sendMessage(m.chat, {
+            text: "🖼️ *Test Album Message*\n\n⚠️ Album tidak dapat dimuat, tetapi fitur AI icon tetap berfungsi!\n\nIni seharusnya menampilkan multiple gambar dalam satu pesan.",
+            ai: true
+          }, { quoted: m });
+        }
         
         break;
       }
