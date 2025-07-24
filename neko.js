@@ -1358,32 +1358,17 @@ break;
       case 'testbutton': {
         if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
         
+        const buttons = [
+          { buttonId: 'button_1', buttonText: { displayText: 'Button 1' }, type: 1 },
+          { buttonId: 'button_2', buttonText: { displayText: 'Button 2' }, type: 1 },
+          { buttonId: 'button_3', buttonText: { displayText: 'Button 3' }, type: 1 }
+        ];
+
         const buttonMessage = {
           text: "🧪 *Test Button Message*\n\nIni adalah testing fitur button message dari baileys-mod!",
           footer: `© ${global.botName} - Powered by baileys-mod`,
-          buttons: [
-            {
-              name: "quick_reply",
-              buttonParamsJson: JSON.stringify({
-                display_text: "Button 1",
-                id: "button_1"
-              })
-            },
-            {
-              name: "quick_reply", 
-              buttonParamsJson: JSON.stringify({
-                display_text: "Button 2",
-                id: "button_2"
-              })
-            },
-            {
-              name: "quick_reply",
-              buttonParamsJson: JSON.stringify({
-                display_text: "Button 3", 
-                id: "button_3"
-              })
-            }
-          ]
+          buttons,
+          headerType: 1
         };
 
         await client.sendMessage(m.chat, buttonMessage, { quoted: m });
@@ -1394,33 +1379,18 @@ break;
       case 'testbuttonimg': {
         if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
         
+        const buttons = [
+          { buttonId: 'like_button', buttonText: { displayText: '👍 Like' }, type: 1 },
+          { buttonId: 'share_button', buttonText: { displayText: '📤 Share' }, type: 1 },
+          { buttonId: 'more_info_button', buttonText: { displayText: '� More Info' }, type: 1 }
+        ];
+
         const buttonMessage = {
-          text: "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari baileys-mod!",
+          image: { url: "https://i.ibb.co/Ks39bYb/image.png" },
+          caption: "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari baileys-mod!",
           footer: `© ${global.botName} - Advanced WhatsApp Bot`,
-          image: { url: "https://i.ibb.co/Ks39bYb/image.png" }, // Ganti dengan URL gambar yang valid
-          buttons: [
-            {
-              name: "quick_reply",
-              buttonParamsJson: JSON.stringify({
-                display_text: "👍 Like",
-                id: "like_button"
-              })
-            },
-            {
-              name: "quick_reply",
-              buttonParamsJson: JSON.stringify({
-                display_text: "📤 Share", 
-                id: "share_button"
-              })
-            },
-            {
-              name: "quick_reply",
-              buttonParamsJson: JSON.stringify({
-                display_text: "📋 More Info",
-                id: "more_info_button"
-              })
-            }
-          ]
+          buttons,
+          headerType: 1
         };
 
         await client.sendMessage(m.chat, buttonMessage, { quoted: m });
@@ -1431,33 +1401,36 @@ break;
       case 'testinteractive': {
         if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
         
+        const interactiveButtons = [
+          {
+            name: "quick_reply",
+            buttonParamsJson: JSON.stringify({
+              display_text: "Quick Reply",
+              id: "quick_reply_1"
+            })
+          },
+          {
+            name: "cta_url",
+            buttonParamsJson: JSON.stringify({
+              display_text: "Visit Website",
+              url: "https://github.com/nstar-y/Bail"
+            })
+          },
+          {
+            name: "cta_copy",
+            buttonParamsJson: JSON.stringify({
+              display_text: "Copy Code",
+              id: "copy_code_1",
+              copy_code: "BAILEYS-MOD-2025"
+            })
+          }
+        ];
+
         const interactiveMessage = {
           text: "⚡ *Test Interactive Message*\n\nIni adalah testing fitur interactive message dengan berbagai jenis button!",
+          title: "Interactive Message Test",
           footer: `© ${global.botName} - baileys-mod features`,
-          buttons: [
-            {
-              name: "quick_reply",
-              buttonParamsJson: JSON.stringify({
-                display_text: "Quick Reply",
-                id: "quick_reply_1"
-              })
-            },
-            {
-              name: "cta_url",
-              buttonParamsJson: JSON.stringify({
-                display_text: "Visit Website",
-                url: "https://github.com/nstar-y/Bail"
-              })
-            },
-            {
-              name: "cta_copy",
-              buttonParamsJson: JSON.stringify({
-                display_text: "Copy Code",
-                id: "copy_code_1",
-                copy_code: "BAILEYS-MOD-2025"
-              })
-            }
-          ]
+          interactiveButtons
         };
 
         await client.sendMessage(m.chat, interactiveMessage, { quoted: m });
