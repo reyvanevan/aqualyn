@@ -598,160 +598,540 @@ case "regml": {
             //case 'cekml':
         case 'cekganja':
 case 'cekganda': {
-  if (!q) return m.reply(`🔍CEK NICK MLBB & FIRST TOPUP\nContoh: cekganda 566055979 8250`);
+  // Input validation dengan detailed error messages
+  if (!q) return m.reply(`🔍 **CEK NICK MLBB & FIRST TOPUP**\n\n📝 Format: \`cekganda [Game ID] [Server]\`\n💡 Contoh: \`cekganda 566055979 8250\`\n\n⚠️ **Tips:**\n• Pastikan Game ID dan Server valid\n• Data akan divalidasi melalui API\n• Proses membutuhkan waktu 10-30 detik`);
+  
   const [gameId, server] = text.split(' ');
-  if (!gameId || !server) return m.reply('Game ID dan Server wajib di isi');
+  
+  // Enhanced input validation
+  if (!gameId || !server) {
+    return m.reply('❌ **Input Tidak Lengkap**\n\n🔹 Game ID dan Server wajib diisi\n🔹 Format: `cekganda [Game ID] [Server]`\n\n💡 Contoh yang benar:\n`cekganda 566055979 8250`');
+  }
+  
+  // Basic format validation (allow flexible digit count)
+  if (!/^\d+$/.test(gameId)) {
+    return m.reply('❌ **Game ID Tidak Valid**\n\n🔹 Game ID harus berupa angka\n🔹 Contoh Game ID yang valid: `566055979`\n\n💡 Cek kembali Game ID di profil MLBB Anda');
+  }
+  
+  if (!/^\d+$/.test(server)) {
+    return m.reply('❌ **Server ID Tidak Valid**\n\n🔹 Server ID harus berupa angka\n🔹 Contoh Server ID yang valid: `8250`\n\n💡 Cek kembali Server ID di profil MLBB Anda');
+  }
 
-  // Kirim pesan awal dan simpen key
-  const initialMsg = await m.reply('Sedang mengecek data akun MLBB...');
-  const msgKey = initialMsg.key;
+  // Rate limiting check (simple implementation)
+  const now = Date.now();
+  const cooldownKey = `cekganda_${m.sender}`;
+  const lastUsed = global.cooldowns?.[cooldownKey] || 0;
+  const cooldownTime = 10000; // 10 seconds
+  
+  if (now - lastUsed < cooldownTime) {
+    const remaining = Math.ceil((cooldownTime - (now - lastUsed)) / 1000);
+    return m.reply(`⏰ **Cooldown Active**\n\n🔹 Silakan tunggu ${remaining} detik lagi\n🔹 Ini untuk mencegah spam dan menjaga server tetap stabil\n\n💡 Gunakan waktu ini untuk memastikan data yang akan dicek sudah benar`);
+  }
+  
+  // Initialize cooldowns if not exists
+  if (!global.cooldowns) global.cooldowns = {};
+  global.cooldowns[cooldownKey] = now;
 
-  // Queue sederhana di dalam case
-  const queue = [];
-  let isProcessing = false;
+  let initialMsg, msgKey, browser, page;
+  
+  try {
+    // Kirim pesan awal dengan loading indicator
+    initialMsg = await m.reply('🔍 **Memulai Validasi Data...**\n\n⏳ Memvalidasi Game ID dan Server melalui API\n🎮 Game ID: `' + gameId + '`\n🌐 Server: `' + server + '`\n\n💡 Validasi API biasanya membutuhkan 3-10 detik');
+    msgKey = initialMsg.key;
 
-  const processQueue = async () => {
-    if (isProcessing || queue.length === 0) return;
-    isProcessing = true;
-    const { msg, gameId, server, msgKey } = queue.shift();
-    try {
-      await handleCekganda(msg, gameId, server, msgKey);
-    } catch (error) {
-      console.error(`Error in queue: ${error.message}`);
-      // Edit pesan awal dengan error
-      await client.sendMessage(msgKey.remoteJid, {
-        text: 'Proses gagal, coba lagi nanti. Server mungkin sibuk.',
-        edit: msgKey
-      }, { quoted: m });
-    }
-    isProcessing = false;
-    processQueue();
-  };
-
-  const handleCekganda = async (msg, gameId, server, msgKey) => {
-    const browser = await firefox.launch({ headless: true });
-    const page = await browser.newPage();
-
-    try {
-      console.log(`Mengisi Game ID: ${gameId} dan Server: ${server}...`);
-      await page.setExtraHTTPHeaders({ 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' });
-      await page.goto('https://www.mobapay.com/mlbb/?r=ID', { waitUntil: 'domcontentloaded', timeout: 10000 });
-
-      const gameIdInput = await page.waitForSelector('#userInput', { timeout: 10000 })
-        .catch(() => console.log('Elemen #userInput nggak ditemukan.'));
-      if (!gameIdInput) throw new Error('Elemen Game ID nggak ketemu');
-
-      const serverInput = await page.waitForSelector('#serverInput', { timeout: 10000 })
-        .catch(() => console.log('Elemen #serverInput nggak ditemukan.'));
-      if (!serverInput) throw new Error('Elemen Server nggak ketemu');
-
-      await page.fill('#userInput', gameId);
-      await page.fill('#serverInput', server);
-
-      await page.dispatchEvent('#userInput', 'blur');
-      await page.dispatchEvent('#serverInput', 'blur');
-
-      const firstItem = await page.waitForSelector('.tracker-recharge-item', { timeout: 10000 });
-      if (firstItem) {
-        await firstItem.click({ timeout: 5000 }).catch(async (e) => {
-          console.log('Klik gagal, coba tutup modal:', e.message);
-          const modal = await page.$('.mobapay-modal-body', { timeout: 5000 });
-          if (modal) {
-            const closeButton = await page.$('.mobapay-modal-close', { timeout: 5000 });
-            if (closeButton) await closeButton.click({ timeout: 5000 });
-          }
-          await firstItem.click({ timeout: 5000 });
-        });
-      } else throw new Error('Elemen item top-up nggak ketemu');
-
-      await page.waitForFunction(
-        () => !document.querySelector('.mobapay-user-character-name')?.textContent.includes('Display after verification'),
-        { timeout: 30000, polling: 500 }
-      ).catch(() => console.log('Verifikasi belum selesai dalam 30 detik.'));
-
-      await page.waitForTimeout(3000);
-      await page.waitForSelector('.mobapay-user-character-name', { timeout: 10000 });
-      await page.waitForSelector('.mobapay-recharge-wrapper', { timeout: 10000 });
-      await page.waitForSelector('.tracker-recharge-item', { timeout: 10000 });
-
-      let nickname = '[Cek di Mobapay]';
-      const nicknameElement = await page.$('.mobapay-user-character-name')
-        .catch(() => console.log('Elemen nickname nggak ditemukan.'));
-      if (nicknameElement) nickname = await nicknameElement.innerText();
-
-      let isValidData = true;
+    // API validation first - enhanced error handling
+    let apiData = null;
+    let validationRetries = 0;
+    const maxValidationRetries = 3;
+    
+    while (validationRetries < maxValidationRetries) {
       try {
-        const apiUrl = `https://dev.luckycat.my.id/api/stalker/mobile-legend?users=${gameId}&servers=${server}`;
-        const apiResponse = await page.evaluate(async (url) => {
-          const response = await fetch(url);
-          return response.json();
-        }, apiUrl);
-        if (!apiResponse.status || !apiResponse.data) {
-          console.log('API gagal atau data tidak lengkap:', apiResponse.msg);
-          isValidData = false;
-          // Edit pesan awal dengan error
+        console.log(`📡 API Validation attempt ${validationRetries + 1}/${maxValidationRetries} for Game ID: ${gameId}, Server: ${server}`);
+        
+        // Update progress for retry attempts
+        if (validationRetries > 0) {
           await client.sendMessage(msgKey.remoteJid, {
-            text: 'Data akun tidak valid: ' + apiResponse.msg,
+            text: `🔍 **Memulai Validasi Data...**\n\n🔄 Mencoba ulang validasi API (${validationRetries + 1}/${maxValidationRetries})\n🎮 Game ID: \`${gameId}\`\n🌐 Server: \`${server}\`\n\n💡 Sedang menghubungi server API...`,
             edit: msgKey
-          }, { quoted: m });
-          return;
+          });
         }
-        nickname = apiResponse.data.nickname || nickname;
-        const country = `${apiResponse.data.country} ${apiResponse.data.emoji}`;
-        let output = `👤 *Nickname:* ${nickname}\n`;
-        output += `🆔 *User ID:* ${gameId}\n`;
-        output += `🌐 *Zone ID:* ${server}\n`;
-        output += `🌍 *Negara:* ${country}\n`;
 
-        if (isValidData) {
-          output += `\n💎 *First Topup Status:*\n`;
-          const rechargeItems = await page.$$('.tracker-recharge-item');
-          const firstTopupTiers = [50, 150, 250, 500];
-          for (const item of rechargeItems) {
-            const diamonds = parseInt(await item.getAttribute('data-diamonds') || '0');
-            const bonus = await item.getAttribute('data-bonus') || '';
-            if (firstTopupTiers.includes(diamonds)) {
-              const hasActive = await item.$('.mobapay-recharge-item-active') !== null;
-              let hasReachLimit = false;
-              const limitElement = await item.$('.mobapay-recharge-item-reachlimit');
-              if (limitElement) {
-                const limitText = await limitElement.innerText();
-                hasReachLimit = limitText.includes('Purchase limit reached');
-              }
-              const status = hasReachLimit ? '❌' : (hasActive ? '✅' : '✅');
-              output += `• ${diamonds} + ${bonus.replace('+', '')} ${status}\n`;
+        const apiUrl = `https://dev.luckycat.my.id/api/stalker/mobile-legend?users=${gameId}&servers=${server}`;
+        
+        // Use axios for better error handling instead of fetch
+        const axios = require('axios');
+        const apiResponse = await axios.get(apiUrl, {
+          timeout: 15000, // 15 second timeout
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        });
+
+        const data = apiResponse.data;
+        console.log('📡 API Response:', data);
+
+        // Enhanced API response validation
+        if (!data) {
+          throw new Error('API mengembalikan response kosong');
+        }
+
+        if (data.error) {
+          throw new Error(`API Error: ${data.error}`);
+        }
+
+        if (!data.status) {
+          // Handle different types of API failure responses
+          if (data.msg) {
+            if (data.msg.includes('User not found') || data.msg.includes('Invalid') || data.msg.includes('not found')) {
+              // This is a validation error, not a server error - don't retry
+              return await client.sendMessage(msgKey.remoteJid, {
+                text: `❌ **Data Tidak Valid**\n\n🔹 **Game ID:** \`${gameId}\`\n🔹 **Server:** \`${server}\`\n🔹 **Error:** ${data.msg}\n\n💡 **Solusi:**\n• Periksa kembali Game ID dan Server di profil MLBB\n• Buka MLBB → Settings → Account → General Info\n• Pastikan tidak ada typo dalam penulisan\n\n📱 **Cara Cek Game ID/Server:**\n1. Buka Mobile Legends\n2. Tap ikon profil (kiri atas)\n3. Lihat User ID dan Zone ID`,
+                edit: msgKey
+              });
+            } else {
+              throw new Error(`API validation failed: ${data.msg}`);
+            }
+          } else {
+            throw new Error('API validation failed: Status false tanpa pesan error');
+          }
+        }
+
+        if (!data.data) {
+          throw new Error('API response tidak mengandung data user');
+        }
+
+        // If we reach here, validation successful
+        apiData = data.data;
+        console.log(`✅ API Validation successful for user: ${apiData.nickname}`);
+        break;
+
+      } catch (error) {
+        validationRetries++;
+        console.error(`❌ API Validation attempt ${validationRetries} failed:`, error.message);
+        
+        // Check if this is a validation error (user data invalid) vs server error
+        if (error.response) {
+          // HTTP error response
+          const status = error.response.status;
+          const statusText = error.response.statusText || 'Unknown Error';
+          
+          if (status === 404) {
+            // User not found - this is validation error, don't retry
+            return await client.sendMessage(msgKey.remoteJid, {
+              text: `❌ **Data Tidak Ditemukan**\n\n🔹 **Game ID:** \`${gameId}\`\n🔹 **Server:** \`${server}\`\n🔹 **Error:** User tidak ditemukan (HTTP 404)\n\n💡 **Kemungkinan Penyebab:**\n• Game ID atau Server salah\n• Akun belum terdaftar di sistem\n• Format penulisan salah\n\n📱 **Cara Cek Game ID/Server:**\n1. Buka Mobile Legends\n2. Tap ikon profil (kiri atas)  \n3. Lihat User ID dan Zone ID\n4. Pastikan tidak ada spasi atau karakter lain`,
+              edit: msgKey
+            });
+          } else if (status >= 500) {
+            // Server error - can retry
+            if (validationRetries >= maxValidationRetries) {
+              throw new Error(`API Server Error (${status}): ${statusText}. Server API sedang bermasalah.`);
+            }
+          } else if (status === 429) {
+            // Rate limited - can retry with longer delay
+            if (validationRetries >= maxValidationRetries) {
+              throw new Error('API Rate Limit: Terlalu banyak request. Coba lagi dalam beberapa menit.');
+            }
+            console.log('⏰ Rate limited, waiting longer before retry...');
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5s for rate limit
+          } else {
+            // Other HTTP errors
+            throw new Error(`API HTTP Error (${status}): ${statusText}`);
+          }
+        } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+          // Timeout error - can retry
+          if (validationRetries >= maxValidationRetries) {
+            throw new Error('API Timeout: Koneksi ke server API timeout. Kemungkinan server sedang lambat atau down.');
+          }
+        } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+          // Network/DNS error - can retry but less likely to succeed
+          if (validationRetries >= maxValidationRetries) {
+            throw new Error('API Network Error: Tidak dapat terhubung ke server API. Kemungkinan server down atau masalah DNS.');
+          }
+        } else {
+          // Other errors - check if it's validation related
+          const errorMsg = error.message.toLowerCase();
+          if (errorMsg.includes('user not found') || errorMsg.includes('invalid') || errorMsg.includes('not found')) {
+            // This is validation error, don't retry
+            return await client.sendMessage(msgKey.remoteJid, {
+              text: `❌ **Data Tidak Valid**\n\n🔹 **Game ID:** \`${gameId}\`\n🔹 **Server:** \`${server}\`\n🔹 **Error:** ${error.message}\n\n💡 **Solusi:**\n• Periksa kembali Game ID dan Server di profil MLBB\n• Pastikan format penulisan benar\n• Coba dengan data yang berbeda\n\n📱 **Cara Cek Data MLBB:**\n1. Buka Mobile Legends\n2. Settings → Account → General Info\n3. Catat User ID dan Zone ID dengan benar`,
+              edit: msgKey
+            });
+          } else {
+            // Unknown error - can retry
+            if (validationRetries >= maxValidationRetries) {
+              throw new Error(`API Error: ${error.message}`);
             }
           }
         }
-        // Edit pesan awal dengan hasil
-        await client.sendMessage(msgKey.remoteJid, {
-          text: output,
-          edit: msgKey
+        
+        // Wait before retry (exponential backoff)
+        if (validationRetries < maxValidationRetries) {
+          const waitTime = Math.pow(2, validationRetries) * 1000; // 2s, 4s, 8s
+          console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
+    }
+
+    // If all retries failed, throw the last error
+    if (!apiData) {
+      throw new Error(`API validation gagal setelah ${maxValidationRetries} percobaan. Server API mungkin sedang bermasalah.`);
+    }
+
+    // Validation successful, continue with scraping
+    const nickname = apiData.nickname || '[Tidak diketahui]';
+    const country = apiData.country ? `${apiData.country} ${apiData.emoji || ''}` : 'Tidak diketahui';
+    
+    await client.sendMessage(msgKey.remoteJid, {
+      text: `✅ **Validasi Berhasil!**\n\n👤 **Nickname:** ${nickname}\n🎮 **Game ID:** \`${gameId}\`\n🌐 **Server:** \`${server}\`\n🌍 **Negara:** ${country}\n\n⏳ Melanjutkan ke pengambilan data First Topup...\n💡 Proses scraping membutuhkan 15-25 detik`,
+      edit: msgKey
+    });
+
+    // Browser launch dengan retry mechanism
+    let browserLaunchAttempts = 0;
+    const maxBrowserAttempts = 3;
+    
+    while (browserLaunchAttempts < maxBrowserAttempts) {
+      try {
+        console.log(`🚀 Launching browser (attempt ${browserLaunchAttempts + 1}/${maxBrowserAttempts})`);
+        browser = await firefox.launch({ 
+          headless: true,
+          timeout: 30000,
+          args: ['--no-sandbox', '--disable-dev-shm-usage']
         });
+        break;
       } catch (error) {
-        console.log('Error mengakses API:', error.message);
-        isValidData = false;
-        // Edit pesan awal dengan error
-        await client.sendMessage(msgKey.remoteJid, {
-          text: 'Data akun tidak valid: Error saat mengakses.',
-          edit: msgKey
+        browserLaunchAttempts++;
+        console.error(`❌ Browser launch failed (attempt ${browserLaunchAttempts}):`, error.message);
+        if (browserLaunchAttempts >= maxBrowserAttempts) {
+          throw new Error(`Browser gagal diluncurkan setelah ${maxBrowserAttempts} percobaan: ${error.message}`);
+        }
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
+      }
+    }
+
+    // Update progress
+    await client.sendMessage(msgKey.remoteJid, {
+      text: `✅ **Validasi Berhasil!**\n\n👤 **Nickname:** ${nickname}\n🎮 **Game ID:** \`${gameId}\`\n🌐 **Server:** \`${server}\`\n🌍 **Negara:** ${country}\n\n✅ Browser berhasil diluncurkan\n⏳ Membuka halaman web...\n💡 Mengambil data First Topup dari server...`,
+      edit: msgKey
+    });
+
+    page = await browser.newPage();
+    
+    // Set timeout and headers with error handling
+    try {
+      await page.setDefaultTimeout(15000);
+      await page.setExtraHTTPHeaders({ 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' 
+      });
+    } catch (error) {
+      console.warn('⚠️ Warning setting page config:', error.message);
+    }
+
+    // Navigate with retry mechanism
+    let navigationAttempts = 0;
+    const maxNavAttempts = 3;
+    
+    while (navigationAttempts < maxNavAttempts) {
+      try {
+        console.log(`🌐 Navigating to server website (attempt ${navigationAttempts + 1}/${maxNavAttempts})`);
+        await page.goto('https://www.mobapay.com/mlbb/?r=ID', { // Hidden for security 
+          waitUntil: 'domcontentloaded', 
+          timeout: 20000 
         });
+        break;
+      } catch (error) {
+        navigationAttempts++;
+        console.error(`❌ Navigation failed (attempt ${navigationAttempts}):`, error.message);
+        if (navigationAttempts >= maxNavAttempts) {
+          throw new Error(`Gagal membuka halaman web setelah ${maxNavAttempts} percobaan. Kemungkinan server top-up sedang down atau koneksi internet bermasalah.`);
+        }
+        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3s before retry
+      }
+    }
+
+    // Update progress
+    await client.sendMessage(msgKey.remoteJid, {
+      text: `✅ **Validasi Berhasil!**\n\n👤 **Nickname:** ${nickname}\n🎮 **Game ID:** \`${gameId}\`\n🌐 **Server:** \`${server}\`\n🌍 **Negara:** ${country}\n\n✅ Halaman web berhasil dibuka\n⏳ Mengisi data input...\n💡 Memproses data First Topup...`,
+      edit: msgKey
+    });
+
+    // Wait for input elements with comprehensive error handling
+    let gameIdInput, serverInput;
+    
+    try {
+      console.log('🔍 Waiting for Game ID input element...');
+      gameIdInput = await page.waitForSelector('#userInput', { timeout: 15000 });
+      if (!gameIdInput) throw new Error('Game ID input element tidak ditemukan');
+    } catch (error) {
+      throw new Error('Elemen input Game ID tidak ditemukan di halaman. Kemungkinan struktur website berubah atau halaman belum sepenuhnya dimuat.');
+    }
+
+    try {
+      console.log('🔍 Waiting for Server input element...');
+      serverInput = await page.waitForSelector('#serverInput', { timeout: 15000 });
+      if (!serverInput) throw new Error('Server input element tidak ditemukan');
+    } catch (error) {
+      throw new Error('Elemen input Server tidak ditemukan di halaman. Kemungkinan struktur website berubah atau halaman belum sepenuhnya dimuat.');
+    }
+
+    // Fill inputs with error handling
+    try {
+      console.log(`📝 Filling Game ID: ${gameId}`);
+      await page.fill('#userInput', gameId);
+      await page.fill('#serverInput', server);
+      
+      // Trigger blur events to activate validation
+      await page.dispatchEvent('#userInput', 'blur');
+      await page.dispatchEvent('#serverInput', 'blur');
+      
+      // Small delay to allow validation
+      await page.waitForTimeout(1000);
+    } catch (error) {
+      throw new Error(`Gagal mengisi data input: ${error.message}. Kemungkinan elemen input berubah atau tidak dapat diakses.`);
+    }
+
+    // Find and click first item with enhanced error handling
+    let firstItem;
+    try {
+      console.log('🔍 Waiting for first recharge item...');
+      firstItem = await page.waitForSelector('.tracker-recharge-item', { timeout: 15000 });
+      if (!firstItem) throw new Error('Item top-up tidak ditemukan');
+    } catch (error) {
+      throw new Error('Tidak dapat menemukan item top-up di halaman. Kemungkinan data Game ID/Server tidak valid atau struktur website berubah.');
+    }
+
+    // Click with retry mechanism
+    let clickAttempts = 0;
+    const maxClickAttempts = 3;
+    
+    while (clickAttempts < maxClickAttempts) {
+      try {
+        console.log(`🖱️ Clicking first item (attempt ${clickAttempts + 1}/${maxClickAttempts})`);
+        await firstItem.click({ timeout: 5000 });
+        break;
+      } catch (error) {
+        clickAttempts++;
+        console.warn(`⚠️ Click failed (attempt ${clickAttempts}):`, error.message);
+        
+        if (clickAttempts < maxClickAttempts) {
+          // Try to close any modal that might be blocking
+          try {
+            const modal = await page.$('.server-modal-body');
+            if (modal) {
+              const closeButton = await page.$('.server-modal-close');
+              if (closeButton) {
+                console.log('🚪 Closing modal before retry...');
+                await closeButton.click();
+                await page.waitForTimeout(1000);
+              }
+            }
+          } catch (modalError) {
+            console.warn('⚠️ Modal close attempt failed:', modalError.message);
+          }
+          
+          await page.waitForTimeout(2000); // Wait before retry
+        } else {
+          throw new Error(`Gagal mengklik item top-up setelah ${maxClickAttempts} percobaan. Kemungkinan ada modal yang menghalangi atau elemen tidak dapat diklik.`);
+        }
+      }
+    }
+
+    // Wait for verification with progress updates
+    await client.sendMessage(msgKey.remoteJid, {
+      text: `✅ **Validasi Berhasil!**\n\n👤 **Nickname:** ${nickname}\n🎮 **Game ID:** \`${gameId}\`\n🌐 **Server:** \`${server}\`\n🌍 **Negara:** ${country}\n\n✅ Data berhasil diproses\n⏳ Menunggu verifikasi server...\n💡 Hampir selesai, tunggu sebentar...`,
+      edit: msgKey
+    });
+
+    try {
+      console.log('⏳ Waiting for verification to complete...');
+      await page.waitForFunction(
+        () => {
+          const element = document.querySelector('.server-user-character-name');
+          return element && !element.textContent.includes('Display after verification');
+        },
+        { timeout: 30000, polling: 1000 }
+      );
+    } catch (error) {
+      throw new Error('Timeout menunggu verifikasi data. Kemungkinan data Game ID/Server tidak valid atau server top-up sedang lambat.');
+    }
+
+    // Additional wait for elements to fully load
+    await page.waitForTimeout(3000);
+
+    // Wait for required elements with individual error handling
+    try {
+      await page.waitForSelector('.server-user-character-name', { timeout: 10000 });
+    } catch (error) {
+      throw new Error('Elemen nickname tidak ditemukan setelah verifikasi. Data mungkin tidak valid.');
+    }
+
+    try {
+      await page.waitForSelector('.tracker-recharge-item', { timeout: 10000 });
+    } catch (error) {
+      throw new Error('Item recharge tidak ditemukan setelah verifikasi. Kemungkinan terjadi error di website.');
+    }
+
+    // Extract nickname from scraping (fallback if different from API)
+    let scrapedNickname = nickname; // Use API nickname as default
+    try {
+      const nicknameElement = await page.$('.server-user-character-name');
+      if (nicknameElement) {
+        const extractedNickname = await nicknameElement.innerText();
+        if (extractedNickname && !extractedNickname.includes('Display after verification')) {
+          scrapedNickname = extractedNickname;
+          console.log(`👤 Scraped nickname: ${scrapedNickname}`);
+        }
       }
     } catch (error) {
-      console.log('error:', error);
-      // Edit pesan awal dengan error
-      await client.sendMessage(msgKey.remoteJid, {
-        text: 'Sabar sayang aku ga kemana, satu-satu gw prosesnya ini pelerrr!\n\n> Usahakan jeda beberapa detik sebelum input data baru ya sayang...\n> Atau mungkin orang lain sedang menggunakan fitur ini juga dalam waktu bersamaan.\n> Coba lagi dalam beberapa saat.',
-        edit: msgKey
-      });
-    } finally {
-      await browser.close();
+      console.warn('⚠️ Warning extracting nickname from scraping:', error.message);
     }
-  };
 
-  // Tambah ke queue
-  queue.push({ msg: m, gameId, server, msgKey });
-  processQueue();
+    // Build result message using API data + scraped first topup data
+    let output = `🎮 **MOBILE LEGENDS ACCOUNT INFO**\n\n`;
+    output += `👤 **Nickname:** ${scrapedNickname}\n`;
+    output += `🆔 **User ID:** ${gameId}\n`;
+    output += `🌐 **Zone ID:** ${server}\n`;
+    output += `🌍 **Negara:** ${country}\n`;
+
+    // Extract first topup status with comprehensive error handling
+    try {
+      output += `\n💎 **FIRST TOPUP STATUS:**\n`;
+      const rechargeItems = await page.$$('.tracker-recharge-item');
+      
+      if (rechargeItems.length === 0) {
+        output += `⚠️ Data first topup tidak dapat diambil dari server\n`;
+      } else {
+        const firstTopupTiers = [50, 150, 250, 500];
+        let foundTiers = 0;
+        
+        for (const item of rechargeItems) {
+          try {
+            const diamonds = parseInt(await item.getAttribute('data-diamonds') || '0');
+            const bonus = await item.getAttribute('data-bonus') || '';
+            
+            if (firstTopupTiers.includes(diamonds)) {
+              const hasActive = await item.$('.server-recharge-item-active') !== null;
+              let hasReachLimit = false;
+              
+              try {
+                const limitElement = await item.$('.server-recharge-item-reachlimit');
+                if (limitElement) {
+                  const limitText = await limitElement.innerText();
+                  hasReachLimit = limitText.includes('Purchase limit reached');
+                }
+              } catch (limitError) {
+                console.warn('⚠️ Warning checking limit status:', limitError.message);
+              }
+              
+              const status = hasReachLimit ? '❌ Sudah digunakan' : '✅ Tersedia';
+              output += `• ${diamonds} + ${bonus.replace('+', '')} Diamond ${status}\n`;
+              foundTiers++;
+            }
+          } catch (itemError) {
+            console.warn('⚠️ Warning processing recharge item:', itemError.message);
+          }
+        }
+        
+        if (foundTiers === 0) {
+          output += `⚠️ Data first topup tier tidak ditemukan\n`;
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Warning extracting first topup data:', error.message);
+      output += `⚠️ Error mengambil data first topup: ${error.message}\n`;
+    }
+
+    output += `\n🕐 **Dicek pada:** ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}\n`;
+    output += `📡 **Data API:** dev.luckycat.my.id\n`;
+    output += `🌐 **Data First Topup:** server topup\n`;
+    output += `\n💡 *Data akurat dan real-time*`;
+
+    // Send final result
+    await client.sendMessage(msgKey.remoteJid, {
+      text: output,
+      edit: msgKey
+    });
+
+    console.log('✅ Cekganda completed successfully with API validation');
+
+  } catch (error) {
+    console.error('❌ Cekganda error:', error);
+    
+    // Categorize error and provide specific user feedback
+    let userErrorMessage = '❌ **Pencarian Gagal**\n\n';
+    
+    if (error.message.includes('API')) {
+      userErrorMessage += '📡 **Masalah:** API validation error\n';
+      userErrorMessage += '💡 **Solusi:** ';
+      if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
+        userErrorMessage += 'Server API sedang lambat, coba lagi dalam 1-2 menit\n';
+      } else if (error.message.includes('Network Error') || error.message.includes('ENOTFOUND')) {
+        userErrorMessage += 'Server API tidak dapat diakses, coba lagi nanti\n';
+      } else if (error.message.includes('Rate Limit')) {
+        userErrorMessage += 'Terlalu banyak request, tunggu beberapa menit\n';
+      } else {
+        userErrorMessage += 'Masalah dengan server API, hubungi admin\n';
+      }
+    } else if (error.message.includes('Browser gagal diluncurkan')) {
+      userErrorMessage += '🔧 **Masalah:** Server sedang overload\n';
+      userErrorMessage += '💡 **Solusi:** Coba lagi dalam 1-2 menit\n';
+    } else if (error.message.includes('Gagal membuka halaman web')) {
+      userErrorMessage += '🌐 **Masalah:** Koneksi ke server top-up bermasalah\n';
+      userErrorMessage += '💡 **Solusi:** Coba lagi nanti, kemungkinan server down\n';
+    } else if (error.message.includes('tidak ditemukan')) {
+      userErrorMessage += '🔍 **Masalah:** Elemen website tidak ditemukan\n';
+      userErrorMessage += '💡 **Solusi:** Website mungkin berubah, hubungi admin\n';
+    } else if (error.message.includes('Timeout')) {
+      userErrorMessage += '⏰ **Masalah:** Proses timeout\n';
+      userErrorMessage += '💡 **Solusi:** Coba lagi dalam beberapa menit\n';
+    } else {
+      userErrorMessage += '❓ **Masalah:** Error tidak diketahui\n';
+      userErrorMessage += '💡 **Solusi:** Coba lagi atau hubungi admin\n';
+    }
+    
+    userErrorMessage += `\n🔍 **Detail Error:** ${error.message}\n`;
+    userErrorMessage += `\n⏰ Silakan coba lagi dalam beberapa saat\n`;
+    userErrorMessage += `💬 Jika masalah berlanjut, hubungi admin dengan screenshot error ini`;
+
+    try {
+      if (msgKey) {
+        await client.sendMessage(msgKey.remoteJid, {
+          text: userErrorMessage,
+          edit: msgKey
+        });
+      } else {
+        await m.reply(userErrorMessage);
+      }
+    } catch (editError) {
+      console.error('❌ Failed to send error message:', editError);
+      // Fallback: send new message if edit fails
+      await m.reply(userErrorMessage);
+    }
+  } finally {
+    // Cleanup with error handling
+    try {
+      if (page) {
+        console.log('🧹 Closing page...');
+        await page.close();
+      }
+    } catch (error) {
+      console.warn('⚠️ Warning closing page:', error.message);
+    }
+    
+    try {
+      if (browser) {
+        console.log('🧹 Closing browser...');
+        await browser.close();
+      }
+    } catch (error) {
+      console.warn('⚠️ Warning closing browser:', error.message);
+    }
+    
+    console.log('✅ Cleanup completed');
+  }
+  
   break;
 }
             
