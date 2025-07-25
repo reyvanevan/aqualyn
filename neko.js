@@ -1496,6 +1496,33 @@ break;
         break;
       }
 
+      // Test AI Debug - Compare group vs private behavior
+      case 'testaidebug': {
+        if (!isOwner) return m.replyNoAI('❌ Hanya owner yang bisa menggunakan command ini.');
+        
+        const chatType = m.isGroup ? "GROUP CHAT" : "PRIVATE CHAT";
+        
+        // Test m.reply (with AI icon)
+        await m.reply(`🧪 *Testing m.reply in ${chatType}*\n\nThis should have AI icon via m.reply function.`);
+        
+        // Wait a moment
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Test client.sendMessage directly
+        await client.sendMessage(m.chat, { 
+          text: `🧪 *Testing direct sendMessage in ${chatType}*\n\nThis should have AI icon via direct client.sendMessage.`,
+          ai: true
+        }, { quoted: m });
+        
+        // Wait a moment
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Test without AI for comparison
+        await m.replyNoAI(`🧪 *Testing without AI in ${chatType}*\n\nThis should NOT have AI icon.`);
+        
+        break;
+      }
+
       // Test Album Message with AI
       case 'testalbum': {
         if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
