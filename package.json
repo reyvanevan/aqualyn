@@ -1,13 +1,18 @@
 {
-    "name": "gemtechproject",
-    "version": "10.0",
-    "description": "WhatsApp Using Lib Baileys Multi Device",
+    "name": "aqualyn-bot",
+    "version": "2.0.0",
+    "description": "WhatsApp Bot Using Baileys-Mod with AI Icon Support - Enhanced by Reyvan",
     "main": "index.js",
     "type": "commonjs",
     "scripts": {
         "start": "node index.js"
     },
-    "author": "VallzOfficial.",
+    "author": "Reyvan (Enhanced from VallzOfficial base)",
+    "contributors": [
+        "VallzOfficial (Original base bot using Whiskeysocket/Baileys)",
+        "nstar-y (baileys-mod library)", 
+        "Reyvan (AI icon features & enhancements)"
+    ],
     "license": "MIT",
     "dependencies": {
         "@adiwajshing/keyed-db": "^0.2.4",

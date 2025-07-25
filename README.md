@@ -1,17 +1,22 @@
 ﻿# 🤖 Aqualyn - Advanced WhatsApp Bot
 
-Bot WhatsApp otomatis dengan fitur lengkap menggunakan `baileys-mod` yang mendukung:
+Bot WhatsApp otomatis dengan fitur lengkap menggunakan `baileys-mod` dengan dukungan AI Icon yang mendukung:
 
 ## ✨ Fitur Utama
 
-### 🔥 **Fitur Baru dari baileys-mod**
+### 🔥 **Enhanced AI Icon Features** 
+- 🤖 **Smart AI Icon Detection** - Auto-detect AI icon berdasarkan tipe chat
+- ⚙️ **Config-Based Control** - Kontrol AI icon via global settings
+- 💬 **Flexible Message Handling** - Support private & group chat
+- 🎯 **Manual Override Functions** - Force enable/disable AI icon
+
+### 🔥 **Fitur dari baileys-mod**
 - 💬 **Send Messages to Channels** - Kirim pesan ke channel WhatsApp
 - 🔘 **Button & Interactive Messages** - Button dan pesan interaktif
 - 🖼️ **Send Album Messages** - Kirim multiple gambar sebagai album
 - 👥 **Group with LID Support** - Support grup dengan @lid
-- 🤖 **AI Message Icon** - Icon AI untuk pesan
 - 🖼️ **Full-Size Profile Pictures** - Upload foto profil ukuran penuh
-- �� **Custom Pairing Codes** - Kode pairing custom
+- 🛠️ **Custom Pairing Codes** - Kode pairing custom
 - 🛠️ **Libsignal Fixes** - Log yang lebih bersih
 
 ### 🛠️ **Fitur Bot**
@@ -75,9 +80,16 @@ node index.js
 ## 🔧 Teknologi
 
 - **Node.js** - Runtime JavaScript
-- **baileys-mod** - WhatsApp Web API (Modified version)
+- **baileys-mod** - WhatsApp Web API (Modified version by nstar-y)
 - **Firebase** - Database (opsional)
 - **Express.js** - Web server untuk webhook
+
+## 🏆 Credits & Contributors
+
+- **VallzOfficial** - Original bot base and core functionality
+- **nstar-y** - baileys-mod library with AI icon support
+- **Reyvan** - AI icon features, config-based system, and enhancements
+- **@adiwajshing** - Original Baileys library
 
 ## 📝 Lisensi
 

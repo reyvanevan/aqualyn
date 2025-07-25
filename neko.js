@@ -43,15 +43,25 @@ module.exports = client = async (client, m, chatUpdate, store, db_respon_list) =
   try {
       console.log('🔍 NEKO.JS: Message received from', m.key?.remoteJid || 'unknown'); // Debug log
       
+      // Define body EARLY for bot check
+      const chath = (m.mtype === 'conversation' && m.message.conversation) ? m.message.conversation : (m.mtype == 'imageMessage') && m.message.imageMessage.caption ? m.message.imageMessage.caption : (m.mtype == 'documentMessage') && m.message.documentMessage.caption ? m.message.documentMessage.caption : (m.mtype == 'videoMessage') && m.message.videoMessage.caption ? m.message.videoMessage.caption : (m.mtype == 'extendedTextMessage') && m.message.extendedTextMessage.text ? m.message.extendedTextMessage.text : (m.mtype == 'buttonsResponseMessage' && m.message.buttonsResponseMessage.selectedButtonId) ? m.message.buttonsResponseMessage.selectedButtonId : (m.mtype == 'templateButtonReplyMessage') && m.message.templateButtonReplyMessage.selectedId ? m.message.templateButtonReplyMessage.selectedId : (m.mtype == "listResponseMessage") ? m.message.listResponseMessage.singleSelectReply.selectedRowId : (m.mtype == "messageContextInfo") ? m.message.listResponseMessage.singleSelectReply.selectedRowId : ''
+      var body = (m.mtype === 'conversation') ? m.message.conversation : (m.mtype == 'imageMessage') ? m.message.imageMessage.caption : (m.mtype == 'videoMessage') ? m.message.videoMessage.caption : (m.mtype == 'extendedTextMessage') ? m.message.extendedTextMessage.text : (m.mtype === 'messageContextInfo') ? (m.text) : ''
+      
       // Skip if message is from bot itself (prevent loop)
       const botNumber = await client.decodeJid(client.user.id);
+      console.log('🤖 Bot check:', {
+        fromMe: m.key.fromMe,
+        sender: m.sender,
+        botNumber: botNumber,
+        body: body,
+        shouldSkip: m.key.fromMe || m.sender === botNumber
+      });
+      
+      // Skip ALL bot messages to prevent any loops
       if (m.key.fromMe || m.sender === botNumber) {
         console.log('⏭️ Skipping bot message to prevent loop');
         return;
       }
-      
-      const chath = (m.mtype === 'conversation' && m.message.conversation) ? m.message.conversation : (m.mtype == 'imageMessage') && m.message.imageMessage.caption ? m.message.imageMessage.caption : (m.mtype == 'documentMessage') && m.message.documentMessage.caption ? m.message.documentMessage.caption : (m.mtype == 'videoMessage') && m.message.videoMessage.caption ? m.message.videoMessage.caption : (m.mtype == 'extendedTextMessage') && m.message.extendedTextMessage.text ? m.message.extendedTextMessage.text : (m.mtype == 'buttonsResponseMessage' && m.message.buttonsResponseMessage.selectedButtonId) ? m.message.buttonsResponseMessage.selectedButtonId : (m.mtype == 'templateButtonReplyMessage') && m.message.templateButtonReplyMessage.selectedId ? m.message.templateButtonReplyMessage.selectedId : (m.mtype == "listResponseMessage") ? m.message.listResponseMessage.singleSelectReply.selectedRowId : (m.mtype == "messageContextInfo") ? m.message.listResponseMessage.singleSelectReply.selectedRowId : ''
-    var body = (m.mtype === 'conversation') ? m.message.conversation : (m.mtype == 'imageMessage') ? m.message.imageMessage.caption : (m.mtype == 'videoMessage') ? m.message.videoMessage.caption : (m.mtype == 'extendedTextMessage') ? m.message.extendedTextMessage.text : (m.mtype === 'messageContextInfo') ? (m.text) : ''
     var budy = (typeof m.text == 'string' ? m.text : '')
     var prefix = "."
     const hariini = moment.tz('Asia/Jakarta').locale('id').format('dddd,DD MMMM YYYY');
@@ -410,10 +420,14 @@ if (m.isGroup && !m.key.fromMe) {
 if (!m.isGroup && !global.owner.includes(m.sender.split("@")[0])) {
   return; // Langsung stop, tanpa balasan apapun
 }*/
-      // middleware semua command di private chat, kecuali admin/owner
+      // Middleware: Allow commands in both group and private chat
+      // Only block if specific conditions are met (like admin-only commands)
+      // Commented out the problematic middleware that was blocking private chat
+      /*
       if (!m.isGroup && ! global.owner.includes(m.sender.split("@")[0])) {
           return;
       }
+      */
       //  Middleware untuk blokir command berdasarkan config grup
 const groupConfigs = loadGroupConfig();
 if (m.isGroup && groupConfigs[m.chat] && groupConfigs[m.chat].lockedCommands?.includes(command.toLowerCase())) {

@@ -13,6 +13,10 @@ namaStore = 'AtlanticGate' // NAMA STORE KAMU
 global.bot = "y"
 global.min = `tag aja etminnya kalo ngartis`
 
+// AI Icon Configuration
+global.aiInGroups = false;  // Toggle AI support in groups  
+global.aiInPrivate = true;  // Toggle AI support in private chat
+
 // Link untuk testing dan fitur bot - menggunakan services yang lebih reliable
 global.linkLOGO = 'https://picsum.photos/400/400'
 global.linkQRIS = 'https://dummyimage.com/400x400/007bff/ffffff&text=QRIS+Payment'
