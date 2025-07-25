@@ -13,12 +13,12 @@ namaStore = 'AtlanticGate' // NAMA STORE KAMU
 global.bot = "y"
 global.min = `tag aja etminnya kalo ngartis`
 
-// Link untuk testing dan fitur bot
-global.linkLOGO = 'https://picsum.photos/500/300'
-global.linkQRIS = 'https://via.placeholder.com/500x300/4a90e2/ffffff?text=QRIS+Payment'
-global.linkGC = 'https://chat.whatsapp.com/LtMNZXHdsjXJYPUcgWhINb'
-global.poster1 = 'https://picsum.photos/500/400'
-global.linksl = 'https://via.placeholder.com/500x400/e74c3c/ffffff?text=Test+Image'
+// Link untuk testing dan fitur bot - menggunakan services yang lebih reliable
+global.linkLOGO = 'https://picsum.photos/400/400'
+global.linkQRIS = 'https://dummyimage.com/400x400/007bff/ffffff&text=QRIS+Payment'
+global.linkGC = 'https://picsum.photos/500/300'
+global.poster1 = 'https://picsum.photos/600/400'
+global.linksl = 'https://dummyimage.com/500x400/28a745/ffffff&text=Success+Image'
 global.testButtonImg = 'https://picsum.photos/600/350'
 global.testAlbumImg1 = 'https://picsum.photos/500/300'
 global.testAlbumImg2 = 'https://picsum.photos/500/400'

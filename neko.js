@@ -1388,16 +1388,49 @@ break;
 
         const caption = "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari baileys-mod dan AI icon!";
         
-        const buttonMessage = {
-          image: { url: global.testButtonImg },
-          caption: caption,
-          footer: `© ${global.botName} - Advanced WhatsApp Bot`,
-          buttons,
-          headerType: 1,
-          ai: true
-        };
+        try {
+          // First try with direct URL approach
+          const buttonMessage = {
+            image: { url: global.testButtonImg },
+            caption: caption,
+            footer: `© ${global.botName} - Advanced WhatsApp Bot`,
+            buttons,
+            headerType: 1,
+            ai: true
+          };
 
-        await client.sendMessage(m.chat, buttonMessage, { quoted: m });
+          await client.sendMessage(m.chat, buttonMessage, { quoted: m });
+        } catch (error) {
+          console.log('❌ Direct URL failed, trying buffer approach:', error.message);
+          
+          try {
+            // Fallback: Try with buffer approach (as per baileys-mod docs)
+            const imageBuffer = await getBuffer(global.testButtonImg);
+            const buttonMessage = {
+              image: imageBuffer,
+              caption: caption + "\n\n*⚠️ Loaded via buffer fallback*",
+              footer: `© ${global.botName} - Advanced WhatsApp Bot`,
+              buttons,
+              headerType: 1,
+              ai: true
+            };
+
+            await client.sendMessage(m.chat, buttonMessage, { quoted: m });
+          } catch (bufferError) {
+            console.log('❌ Buffer approach failed:', bufferError.message);
+            
+            // Ultimate fallback: text only
+            const textMessage = {
+              text: caption + "\n\n⚠️ *Image could not be loaded due to rate limiting or network issues*\n\nButton functionality still works!",
+              footer: `© ${global.botName} - Advanced WhatsApp Bot`,
+              buttons,
+              headerType: 1,
+              ai: true
+            };
+
+            await client.sendMessage(m.chat, textMessage, { quoted: m });
+          }
+        }
         break;
       }
 
@@ -1467,33 +1500,51 @@ break;
       case 'testalbum': {
         if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
         
-        const media = [
-          { image: { url: global.testAlbumImg1 } },
-          { image: { url: global.testAlbumImg2 } }
-        ];
-
         const caption = "🖼️ *Test Album Message*\n\nIni adalah testing fitur album message dengan AI icon!";
         
-        await client.sendMessage(m.chat, { 
-          album: media, 
-          caption: caption,
-          ai: true
-        }, { quoted: m });
+        try {
+          // First try with direct URL approach
+          const media = [
+            { image: { url: global.testAlbumImg1 } },
+            { image: { url: global.testAlbumImg2 } }
+          ];
+
+          await client.sendMessage(m.chat, { 
+            album: media, 
+            caption: caption,
+            ai: true
+          }, { quoted: m });
+        } catch (error) {
+          console.log('❌ Direct URL album failed, trying buffer approach:', error.message);
+          
+          try {
+            // Fallback: Try with buffer approach (as per baileys-mod docs)
+            const media = [
+              { image: await getBuffer(global.testAlbumImg1) },
+              { image: await getBuffer(global.testAlbumImg2) }
+            ];
+
+            await client.sendMessage(m.chat, { 
+              album: media, 
+              caption: caption + "\n\n*⚠️ Loaded via buffer fallback*",
+              ai: true
+            }, { quoted: m });
+          } catch (bufferError) {
+            console.log('❌ Buffer album approach failed:', bufferError.message);
+            
+            // Ultimate fallback: text only
+            await client.sendMessage(m.chat, {
+              text: caption + "\n\n⚠️ *Album images could not be loaded due to rate limiting or network issues*\n\nThis should have shown multiple images in one message.",
+              ai: true
+            }, { quoted: m });
+          }
+        }
         
         break;
       }
 
       // Test Pay/Payment - Working example dari struktur lama
-      case 'pay':           
-      case 'payment': {
-        const capt = `💰 *Payment QRIS*\n\nScan QRIS di atas untuk melakukan pembayaran.\n\nDengan AI icon!`;
-        await client.sendMessage(m.chat, { 
-          image: { url: global.linkQRIS }, 
-          caption: capt,
-          ai: true 
-        }, { quoted: m });
-        break;
-      }
+      
 
       default:
     }
