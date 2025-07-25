@@ -42,6 +42,14 @@ const { smsg, tanggal, getTime, isUrl, sleep, clockString, runtime, fetchJson, g
 module.exports = client = async (client, m, chatUpdate, store, db_respon_list) => {
   try {
       console.log('🔍 NEKO.JS: Message received from', m.key?.remoteJid || 'unknown'); // Debug log
+      
+      // Skip if message is from bot itself (prevent loop)
+      const botNumber = await client.decodeJid(client.user.id);
+      if (m.key.fromMe || m.sender === botNumber) {
+        console.log('⏭️ Skipping bot message to prevent loop');
+        return;
+      }
+      
       const chath = (m.mtype === 'conversation' && m.message.conversation) ? m.message.conversation : (m.mtype == 'imageMessage') && m.message.imageMessage.caption ? m.message.imageMessage.caption : (m.mtype == 'documentMessage') && m.message.documentMessage.caption ? m.message.documentMessage.caption : (m.mtype == 'videoMessage') && m.message.videoMessage.caption ? m.message.videoMessage.caption : (m.mtype == 'extendedTextMessage') && m.message.extendedTextMessage.text ? m.message.extendedTextMessage.text : (m.mtype == 'buttonsResponseMessage' && m.message.buttonsResponseMessage.selectedButtonId) ? m.message.buttonsResponseMessage.selectedButtonId : (m.mtype == 'templateButtonReplyMessage') && m.message.templateButtonReplyMessage.selectedId ? m.message.templateButtonReplyMessage.selectedId : (m.mtype == "listResponseMessage") ? m.message.listResponseMessage.singleSelectReply.selectedRowId : (m.mtype == "messageContextInfo") ? m.message.listResponseMessage.singleSelectReply.selectedRowId : ''
     var body = (m.mtype === 'conversation') ? m.message.conversation : (m.mtype == 'imageMessage') ? m.message.imageMessage.caption : (m.mtype == 'videoMessage') ? m.message.videoMessage.caption : (m.mtype == 'extendedTextMessage') ? m.message.extendedTextMessage.text : (m.mtype === 'messageContextInfo') ? (m.text) : ''
     var budy = (typeof m.text == 'string' ? m.text : '')
@@ -83,7 +91,7 @@ const command = cleanBody.replace(prefix, '').trim().split(/ +/).shift().toLower
     const quoted = m.quoted ? m.quoted : m
     const mime = (quoted.msg || quoted).mimetype || ''
     const from = mek.key.remoteJid
-    const botNumber = await client.decodeJid(client.user.id)
+    // botNumber already defined above
     const isOwner = [botNumber, ...global.owner].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender)
     const sender = m.isGroup ? (m.key.participant ? m.key.participant : m.participant) : m.key.remoteJid
     const groupMetadata = m.isGroup ? await client.groupMetadata(from).catch(e => {}) : ''
@@ -1498,7 +1506,7 @@ break;
 
       // Test AI Debug - Compare group vs private behavior
       case 'testaidebug': {
-        if (!isOwner) return m.replyNoAI('❌ Hanya owner yang bisa menggunakan command ini.');
+        if (!isOwner) return client.sendMessage(m.chat, { text: '❌ Hanya owner yang bisa menggunakan command ini.' }, { quoted: m });
         
         const chatType = m.isGroup ? "GROUP CHAT" : "PRIVATE CHAT";
         
@@ -1517,8 +1525,10 @@ break;
         // Wait a moment
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Test without AI for comparison
-        await m.replyNoAI(`🧪 *Testing without AI in ${chatType}*\n\nThis should NOT have AI icon.`);
+        // Test without AI for comparison (use client.sendMessage instead of m.replyNoAI)
+        await client.sendMessage(m.chat, { 
+          text: `🧪 *Testing without AI in ${chatType}*\n\nThis should NOT have AI icon.`
+        }, { quoted: m });
         
         break;
       }
