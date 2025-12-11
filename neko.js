@@ -6,25 +6,32 @@ let antilinkEnabled = false;
 const { BufferJSON, WA_DEFAULT_EPHEMERAL, makeWASocket, useMultiFileAuthState, getAggregateVotesInPollMessage, generateWAMessageFromContent, proto, generateWAMessageContent, generateWAMessage, prepareWAMessageMedia, downloadContentFromMessage, areJidsSameUser, getContentType } = require("@whiskeysockets/baileys")
 const fs = require('fs')
 const pino = require('pino')
-const pushname = m.pushName || "No Name"
 let defaultMarkupPercentage = 0.01; 
 
 const { firefox } = require('playwright');
 const FormData = require('form-data');
-const admin = require('firebase-admin');
-const serviceAccount = require('./db/serviceAccountKey.json');
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://your-project-id.firebaseio.com',
-  });
+// Firebase - Optional (comment kalau tidak dipakai)
+let admin = null;
+try {
+  admin = require('firebase-admin');
+  const serviceAccount = require('./db/serviceAccountKey.json');
+  
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: 'https://your-project-id.firebaseio.com',
+    });
+  }
+  console.log('✅ Firebase initialized successfully');
+} catch (err) {
+  console.log('⚠️ Firebase not configured (optional feature):', err.message);
+  admin = null;
 }
 
 const antilink = JSON.parse(fs.readFileSync('./src/antilink.json'));
 const md5 = require('md5');
-const isCreator = [nomerBot, ...global.owner].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender)
-const firestore = admin.firestore();
+const firestore = admin ? admin.firestore() : null;
 const path = require('path');
 const util = require('util')
 const chalk = require('chalk')
@@ -38,7 +45,7 @@ const jsonFilePath = './db/custom_commands.json';
 const botgroupFile = './db/botgroup.json';
 const configPath = './db/groupConfig.json';
 const { exec, spawn, execSync } = require("child_process")
-const { smsg, tanggal, getTime, isUrl, sleep, clockString, runtime, fetchJson, getBuffer, jsonformat, format, parseMention, getRandom, getGroupAdmins, generateUniqueRefID, connect } = require('./lib/myfunc')
+const { smsg, tanggal, getTime, isUrl, sleep, clockString, runtime, fetchJson, getBuffer, jsonformat, format, parseMention, getRandom, getGroupAdmins, generateUniqueRefID, connect, isPnUser, isLidUser, normalizeJid, getUserId, formatPhoneNumber, isOwnerCheck } = require('./lib/myfunc')
 module.exports = client = async (client, m, chatUpdate, store, db_respon_list) => {
   try {
       console.log('🔍 NEKO.JS: Message received from', m.key?.remoteJid || 'unknown'); // Debug log
@@ -57,7 +64,7 @@ module.exports = client = async (client, m, chatUpdate, store, db_respon_list) =
     const hariini = moment.tz('Asia/Jakarta').locale('id').format('dddd,DD MMMM YYYY');
     const productData = './db/datadigi.json';
       const productData2 = './db/dataevilbee.json';
-    const db = admin.firestore();
+    const db = admin ? admin.firestore() : null;
     const pathUser = './db/user_down.json'
     const afk = require('./lib/afk');
     const _afk = JSON.parse(fs.readFileSync('./db/afk.json'));
@@ -90,17 +97,21 @@ const command = cleanBody.replace(prefix, '').trim().split(/ +/).shift().toLower
     const { type, quotedMsg, mentioned, now, fromMe } = m
     const quoted = m.quoted ? m.quoted : m
     const mime = (quoted.msg || quoted).mimetype || ''
-    const from = mek.key.remoteJid
+    // Baileys v7: Support remoteJidAlt for alternate JID mapping
+    const from = mek.key.remoteJidAlt || mek.key.remoteJid
     // botNumber already defined above
-    const isOwner = [botNumber, ...global.owner].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(m.sender)
-    const sender = m.isGroup ? (m.key.participant ? m.key.participant : m.participant) : m.key.remoteJid
+    // isOwner with LID support
+    const isOwner = isOwnerCheck(m.sender, global.owner, botNumber)
+    // Baileys v7: Support participantAlt for alternate participant mapping
+    const sender = normalizeJid(m.isGroup ? (m.key.participantAlt || m.key.participant || m.participant) : (mek.key.remoteJidAlt || mek.key.remoteJid))
     const groupMetadata = m.isGroup ? await client.groupMetadata(from).catch(e => {}) : ''
     const groupName = m.isGroup ? groupMetadata.subject : ''
     const participants = m.isGroup ? await groupMetadata.participants : ''
     const groupAdmins = m.isGroup ? await getGroupAdmins(participants) : ''
     const isBotAdmins = m.isGroup ? groupAdmins.includes(botNumber) : false
     const isAdmins = m.isGroup ? groupAdmins.includes(m.sender) : false
-    const isGroup = m.key.remoteJid.endsWith('@g.us')
+    // Baileys v7: Support remoteJidAlt
+    const isGroup = (mek.key.remoteJidAlt || mek.key.remoteJid).endsWith('@g.us')
     const isAfkOn = afk.checkAfkUser(m.sender, _afk)
     const time = moment(Date.now()).tz('Asia/Jakarta').locale('id').format('HH:mm z')
     const harisekarang = moment.tz('Asia/Jakarta').format('DD MMMM YYYY')
@@ -410,10 +421,11 @@ if (m.isGroup && !m.key.fromMe) {
 if (!m.isGroup && !global.owner.includes(m.sender.split("@")[0])) {
   return; // Langsung stop, tanpa balasan apapun
 }*/
-      // middleware semua command di private chat, kecuali admin/owner
+      /* middleware semua command di private chat, kecuali admin/owner
       if (!m.isGroup && ! global.owner.includes(m.sender.split("@")[0])) {
           return;
       }
+      */
       //  Middleware untuk blokir command berdasarkan config grup
 const groupConfigs = loadGroupConfig();
 if (m.isGroup && groupConfigs[m.chat] && groupConfigs[m.chat].lockedCommands?.includes(command.toLowerCase())) {
@@ -923,7 +935,10 @@ break;
         if (!isAdmins && !isOwner) return
         if (!isBotAdmins) return
         let response = await client.groupInviteCode(m.chat)
-        client.sendText(m.chat, `*『 INFO LINK GROUP 』*\n\n» *Nama Grup :* ${groupMetadata.subject}\n» *Owner Grup :* ${groupMetadata.owner !== undefined ? '@' + groupMetadata.owner.split`@`[0] : 'Tidak diketahui'}\n» *ID Grup:* ${groupMetadata.id}\n» *Link Grup :* https://chat.whatsapp.com/${response}\n» *Member :* ${groupMetadata.participants.length}\n`, m, {
+        // Baileys v7: Support both owner (LID) and ownerPn (phone number) fields
+        const groupOwner = groupMetadata.ownerPn || groupMetadata.owner || 'Tidak diketahui'
+        const ownerDisplay = groupOwner !== 'Tidak diketahui' ? '@' + groupOwner.split`@`[0] : groupOwner
+        client.sendText(m.chat, `*『 INFO LINK GROUP 』*\n\n» *Nama Grup :* ${groupMetadata.subject}\n» *Owner Grup :* ${ownerDisplay}\n» *ID Grup:* ${groupMetadata.id}\n» *Link Grup :* https://chat.whatsapp.com/${response}\n» *Member :* ${groupMetadata.participants.length}\n`, m, {
           detectLink: true
         })
       }
@@ -1373,8 +1388,8 @@ break;
         ];
 
         const buttonMessage = {
-          text: "🧪 *Test Button Message*\n\nIni adalah testing fitur button message dari baileys-mod dengan AI icon!",
-          footer: `© ${global.botName} - Powered by baileys-mod`,
+          text: "🧪 *Test Button Message*\n\nIni adalah testing fitur button message dari Baileys v7 dengan AI icon!",
+          footer: `© ${global.botName} - Powered by @whiskeysockets/baileys`,
           buttons,
           headerType: 1,
           ai: true
@@ -1394,7 +1409,7 @@ break;
           { buttonId: 'more_info_button', buttonText: { displayText: 'ℹ️ More Info' }, type: 1 }
         ];
 
-        const caption = "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari baileys-mod dan AI icon!";
+        const caption = "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari Baileys v7 dan AI icon!";
         
         try {
           // First try with direct URL approach
@@ -1412,7 +1427,7 @@ break;
           console.log('❌ Direct URL failed, trying buffer approach:', error.message);
           
           try {
-            // Fallback: Try with buffer approach (as per baileys-mod docs)
+            // Fallback: Try with buffer approach (as per Baileys v7 docs)
             const imageBuffer = await getBuffer(global.testButtonImg);
             const buttonMessage = {
               image: imageBuffer,
@@ -1466,7 +1481,7 @@ break;
             buttonParamsJson: JSON.stringify({
               display_text: "Copy Code",
               id: "copy_code_1",
-              copy_code: "BAILEYS-MOD-2025"
+              copy_code: "BAILEYS-V7-2025"
             })
           }
         ];
@@ -1474,7 +1489,7 @@ break;
         const interactiveMessage = {
           text: "⚡ *Test Interactive Message*\n\nIni adalah testing fitur interactive message dengan berbagai jenis button dan AI icon!",
           title: "Interactive Message Test",
-          footer: `© ${global.botName} - baileys-mod features`,
+          footer: `© ${global.botName} - Baileys v7 features`,
           interactiveButtons,
           ai: true
         };
@@ -1555,7 +1570,7 @@ break;
           console.log('❌ Direct URL album failed, trying buffer approach:', error.message);
           
           try {
-            // Fallback: Try with buffer approach (as per baileys-mod docs)
+            // Fallback: Try with buffer approach (as per Baileys v7 docs)
             const media = [
               { image: await getBuffer(global.testAlbumImg1) },
               { image: await getBuffer(global.testAlbumImg2) }

@@ -1,10 +1,10 @@
 ﻿# 🤖 Aqualyn - Advanced WhatsApp Bot
 
-Bot WhatsApp otomatis dengan fitur lengkap menggunakan `baileys-mod` yang mendukung:
+Bot WhatsApp otomatis dengan fitur lengkap menggunakan `@whiskeysockets/baileys` v7.0.0-rc.9 yang mendukung:
 
 ## ✨ Fitur Utama
 
-### 🔥 **Fitur Baru dari baileys-mod**
+### 🔥 **Fitur dari Baileys v7**
 - 💬 **Send Messages to Channels** - Kirim pesan ke channel WhatsApp
 - 🔘 **Button & Interactive Messages** - Button dan pesan interaktif
 - 🖼️ **Send Album Messages** - Kirim multiple gambar sebagai album
@@ -75,7 +75,7 @@ node index.js
 ## 🔧 Teknologi
 
 - **Node.js** - Runtime JavaScript
-- **baileys-mod** - WhatsApp Web API (Modified version)
+- **@whiskeysockets/baileys** v7.0.0-rc.9 - Official WhatsApp Web API
 - **Firebase** - Database (opsional)
 - **Express.js** - Web server untuk webhook
 
@@ -92,4 +92,4 @@ Contributions welcome! Silakan buat issue atau pull request.
 Jika ada pertanyaan atau masalah, silakan buat issue di repository ini.
 
 ---
-Made with ❤️ using baileys-mod
+Made with ❤️ using @whiskeysockets/baileys v7

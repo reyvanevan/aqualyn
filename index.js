@@ -129,6 +129,29 @@ return decode.user && decode.server && decode.user + '@' + decode.server || jid
 } else return jid
 }
 //=================================================//
+// LID Mapping Support (Baileys v7)
+client.getLIDForPN = async (phoneNumber) => {
+  try {
+    if (client.signalRepository && client.signalRepository.lidMapping) {
+      return await client.signalRepository.lidMapping.getLIDForPN(phoneNumber)
+    }
+  } catch (err) {
+    console.log('getLIDForPN error:', err.message)
+  }
+  return null
+}
+
+client.getPNForLID = async (lid) => {
+  try {
+    if (client.signalRepository && client.signalRepository.lidMapping) {
+      return await client.signalRepository.lidMapping.getPNForLID(lid)
+    }
+  } catch (err) {
+    console.log('getPNForLID error:', err.message)
+  }
+  return null
+}
+//=================================================//
 // Set public mode BEFORE event listeners
 client.public = true
 //=================================================//
@@ -230,7 +253,7 @@ if (copy.key.remoteJid.includes('@s.whatsapp.net')) sender = sender || copy.key.
 else if (copy.key.remoteJid.includes('@broadcast')) sender = sender || copy.key.remoteJid
 copy.key.remoteJid = jid
 copy.key.fromMe = sender === client.user.id
-return proto.WebMessageInfo.fromObject(copy)}
+return proto.WebMessageInfo.create(copy)}
 client.sendFile = async(jid, PATH, fileName, quoted = {}, options = {}) => {
 let types = await client.getFile(PATH, true)
 let { filename, size, ext, mime, data } = types
