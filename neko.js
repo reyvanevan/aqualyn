@@ -3,7 +3,7 @@ let autoGetLayanan = false;
 let intervalId;
 let antilinkEnabled = false;
 
-const { BufferJSON, WA_DEFAULT_EPHEMERAL, makeWASocket, useMultiFileAuthState, getAggregateVotesInPollMessage, generateWAMessageFromContent, proto, generateWAMessageContent, generateWAMessage, prepareWAMessageMedia, downloadContentFromMessage, areJidsSameUser, getContentType } = require("baileys-mod")
+const { BufferJSON, WA_DEFAULT_EPHEMERAL, makeWASocket, useMultiFileAuthState, getAggregateVotesInPollMessage, generateWAMessageFromContent, proto, generateWAMessageContent, generateWAMessage, prepareWAMessageMedia, downloadContentFromMessage, areJidsSameUser, getContentType } = require("@whiskeysockets/baileys")
 const fs = require('fs')
 const pino = require('pino')
 const pushname = m.pushName || "No Name"
@@ -64,7 +64,7 @@ module.exports = client = async (client, m, chatUpdate, store, db_respon_list) =
       const ms = require('parse-ms');
       const fetch = require('node-fetch');
       const { createCanvas, loadImage } = require("canvas");
-      const { prepareWAMessageMedia } = require('baileys-mod');
+      const { prepareWAMessageMedia } = require('@whiskeysockets/baileys');
       const moment2 = require('moment-timezone');
       const QRCode = require('qrcode');
     let localUserData = [];

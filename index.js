@@ -5,7 +5,7 @@ if (!global.crypto) {
 }
 
 require('./db/config')
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, /*makeInMemoryStore,*/ jidDecode, getAggregateVotesInPollMessage, proto } = require("baileys-mod")
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestWaWebVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, /*makeInMemoryStore,*/ jidDecode, getAggregateVotesInPollMessage, proto } = require("@whiskeysockets/baileys")
 const fs = require('fs')
 const pino = require('pino')
 const chalk = require('chalk')
@@ -93,7 +93,7 @@ console.log(color(`INFO:`, "gold"), color(`\n-`, "gold"), color(`Jika code tidak
 async function connectToWhatsApp() {
 const { state, saveCreds } = await useMultiFileAuthState(global.sessionName)
 
-const { version } = await fetchLatestBaileysVersion();
+const { version } = await fetchLatestWaWebVersion();
 
 
 const client = makeWASocket({
