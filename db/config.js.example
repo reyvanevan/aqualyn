@@ -1,0 +1,56 @@
+const fs = require('fs')
+const chalk = require('chalk')
+
+// Owner Configuration
+global.owner = ['628123456789', '628987654321'] // Nomor owner (tanpa +)
+global.nomerOwner = '628123456789' // Nomor owner utama
+global.ownerName = 'YourName' // Nama owner
+
+// Bot Configuration
+global.nomerBot = '628123456789' // Nomor bot
+global.botName = 'Your Bot Name' // Nama bot
+global.sessionName = 'session' // Nama folder session
+namaStore = 'Your Store Name' // Nama toko/store
+
+// Bot Settings
+global.bot = "y" // Bot aktif (y/n)
+global.min = `tag aja etminnya kalo ngartis` // Pesan mention
+
+// Media Links - Ganti dengan link gambar kamu
+global.linkLOGO = 'https://picsum.photos/400/400'
+global.linkQRIS = 'https://dummyimage.com/400x400/007bff/ffffff&text=QRIS+Payment'
+global.linkGC = 'https://picsum.photos/500/300'
+global.poster1 = 'https://picsum.photos/600/400'
+global.linksl = 'https://dummyimage.com/500x400/28a745/ffffff&text=Success+Image'
+global.testButtonImg = 'https://picsum.photos/600/350'
+global.testAlbumImg1 = 'https://picsum.photos/500/300'
+global.testAlbumImg2 = 'https://picsum.photos/500/400'
+
+// Payment Gateway Configuration
+// OkeConnect API - untuk mutasi QRIS
+global.keyorkut = "YOUR_OKECONNECT_API_KEY_HERE" // API Key dari OkeConnect
+global.merchant = "YOUR_MERCHANT_ID" // Merchant ID OkeConnect
+
+// QRIS Static Code - untuk generate dynamic QRIS
+// Format: Standard QRIS EMV
+global.codeqr = "YOUR_QRIS_STATIC_CODE_HERE"
+
+// Bot Response Messages
+global.mess = {
+  wait: "Loading...",
+  owner: "Maaf kak, fitur ini khusus Owner",
+  waitdata: "Melihat Data Terkini...",
+  admin: "Fitur Khusus Admin Group!",
+  group: "Fitur Khusus Group!",
+  private: 'Silahkan menggunakan Fitur ini di Private Chat!',
+  botAdmin: "Bot Harus Menjadi Admin Terlebih Dahulu!",
+};
+
+// Hot Reload - Auto reload saat config berubah
+let file = require.resolve(__filename)
+fs.watchFile(file, () => {
+  fs.unwatchFile(file)
+  console.log(chalk.yellowBright(`Update File Terbaru ${__filename}`))
+  delete require.cache[file]
+  require(file)
+})

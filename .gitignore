@@ -40,6 +40,7 @@ lerna-debug.log*
 /sessions
 /database
 /db/serviceAccountKey.json
+/db/config.js
 
 # temp files
 .temp
