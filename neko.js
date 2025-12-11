@@ -100,10 +100,25 @@ const command = cleanBody.replace(prefix, '').trim().split(/ +/).shift().toLower
     // Baileys v7: Support remoteJidAlt for alternate JID mapping
     const from = mek.key.remoteJidAlt || mek.key.remoteJid
     // botNumber already defined above
-    // isOwner with LID support
-    const isOwner = isOwnerCheck(m.sender, global.owner, botNumber)
     // Baileys v7: Support participantAlt for alternate participant mapping
     const sender = normalizeJid(m.isGroup ? (m.key.participantAlt || m.key.participant || m.participant) : (mek.key.remoteJidAlt || mek.key.remoteJid))
+    
+    // isOwner check - Baileys v7 auto-converts LID to PN in m.sender
+    // So we can directly check against owner numbers from config
+    let isOwner = false
+    if (isLidUser(sender)) {
+      // For LID users, try to get PN from mapping first
+      const pn = await client.getPNForLID(sender).catch(() => null)
+      if (pn) {
+        isOwner = isOwnerCheck(pn, global.owner, botNumber)
+      } else {
+        // Fallback: check LID directly
+        isOwner = isOwnerCheck(sender, global.owner, botNumber)
+      }
+    } else {
+      // For PN users (most common case after Baileys auto-conversion)
+      isOwner = isOwnerCheck(sender, global.owner, botNumber)
+    }
     const groupMetadata = m.isGroup ? await client.groupMetadata(from).catch(e => {}) : ''
     const groupName = m.isGroup ? groupMetadata.subject : ''
     const participants = m.isGroup ? await groupMetadata.participants : ''
