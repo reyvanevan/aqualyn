@@ -436,11 +436,11 @@ if (m.isGroup && !m.key.fromMe) {
 if (!m.isGroup && !global.owner.includes(m.sender.split("@")[0])) {
   return; // Langsung stop, tanpa balasan apapun
 }*/
-      /* middleware semua command di private chat, kecuali admin/owner
+      // middleware semua command di private chat, kecuali admin/owner
       if (!m.isGroup && ! global.owner.includes(m.sender.split("@")[0])) {
           return;
       }
-      */
+      
       //  Middleware untuk blokir command berdasarkan config grup
 const groupConfigs = loadGroupConfig();
 if (m.isGroup && groupConfigs[m.chat] && groupConfigs[m.chat].lockedCommands?.includes(command.toLowerCase())) {
