@@ -1487,6 +1487,17 @@ break;
             }
             
             const qrisUrl = pay.data.result.imageqris.url;
+            const apiRefId = pay.data.result.idtransaksi;
+            const apiExpired = pay.data.result.expired;
+            
+            // Download image as buffer to avoid pixhost timeout
+            console.log('Downloading QRIS image from:', qrisUrl);
+            const imageResponse = await axios.get(qrisUrl, { 
+              responseType: 'arraybuffer',
+              timeout: 30000 // 30 seconds
+            });
+            const imageBuffer = Buffer.from(imageResponse.data, 'binary');
+            
             const now = moment2.tz('Asia/Jakarta');
             const expireAt = now.clone().add(5, 'minutes');
             const expiredText = expireAt.format('HH:mm:ss');
@@ -1494,6 +1505,7 @@ break;
             const caption = `╭─────〔 *QRIS PAYMENT* 〕─────
 │
 │ 📋 *Ref ID:* ${ref_id}
+│ 🆔 *API ID:* ${apiRefId}
 │ 💰 *Amount:* Rp ${amount.toLocaleString('id-ID')}
 │ 🔢 *Kode Unik:* +Rp ${uniqueCode}
 │ 💳 *Total Bayar:* *Rp ${totalAmount.toLocaleString('id-ID')}*
@@ -1511,7 +1523,7 @@ Scan QRIS di atas menggunakan:
 Transfer tepat sesuai nominal *Total Bayar* agar terdeteksi otomatis!`;
 
             await client.sendMessage(m.chat, {
-              image: { url: qrisUrl },
+              image: imageBuffer,
               caption: caption
             }, { quoted: m });
 
