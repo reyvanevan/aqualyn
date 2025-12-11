@@ -1392,127 +1392,6 @@ break;
 break;
 };           
    
-      // Test Button Message case - sesuai dokumentasi nstar-y/bail
-      case 'testbutton': {
-        if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
-        
-        const buttons = [
-          { buttonId: 'button_1', buttonText: { displayText: 'Button 1' }, type: 1 },
-          { buttonId: 'button_2', buttonText: { displayText: 'Button 2' }, type: 1 },
-          { buttonId: 'button_3', buttonText: { displayText: 'Button 3' }, type: 1 }
-        ];
-
-        const buttonMessage = {
-          text: "🧪 *Test Button Message*\n\nIni adalah testing fitur button message dari Baileys v7 dengan AI icon!",
-          footer: `© ${global.botName} - Powered by @whiskeysockets/baileys`,
-          buttons,
-          headerType: 1,
-          ai: true
-        };
-
-        await client.sendMessage(m.chat, buttonMessage, { quoted: m });
-        break;
-      }
-
-      // Test Button dengan Image
-      case 'testbuttonimg': {
-        if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
-        
-        const buttons = [
-          { buttonId: 'like_button', buttonText: { displayText: '👍 Like' }, type: 1 },
-          { buttonId: 'share_button', buttonText: { displayText: '📤 Share' }, type: 1 },
-          { buttonId: 'more_info_button', buttonText: { displayText: 'ℹ️ More Info' }, type: 1 }
-        ];
-
-        const caption = "🖼️ *Test Button dengan Image*\n\nIni adalah testing fitur button message dengan gambar dari Baileys v7 dan AI icon!";
-        
-        try {
-          // First try with direct URL approach
-          const buttonMessage = {
-            image: { url: global.testButtonImg },
-            caption: caption,
-            footer: `© ${global.botName} - Advanced WhatsApp Bot`,
-            buttons,
-            headerType: 1,
-            ai: true
-          };
-
-          await client.sendMessage(m.chat, buttonMessage, { quoted: m });
-        } catch (error) {
-          console.log('❌ Direct URL failed, trying buffer approach:', error.message);
-          
-          try {
-            // Fallback: Try with buffer approach (as per Baileys v7 docs)
-            const imageBuffer = await getBuffer(global.testButtonImg);
-            const buttonMessage = {
-              image: imageBuffer,
-              caption: caption + "\n\n*⚠️ Loaded via buffer fallback*",
-              footer: `© ${global.botName} - Advanced WhatsApp Bot`,
-              buttons,
-              headerType: 1,
-              ai: true
-            };
-
-            await client.sendMessage(m.chat, buttonMessage, { quoted: m });
-          } catch (bufferError) {
-            console.log('❌ Buffer approach failed:', bufferError.message);
-            
-            // Ultimate fallback: text only
-            const textMessage = {
-              text: caption + "\n\n⚠️ *Image could not be loaded due to rate limiting or network issues*\n\nButton functionality still works!",
-              footer: `© ${global.botName} - Advanced WhatsApp Bot`,
-              buttons,
-              headerType: 1,
-              ai: true
-            };
-
-            await client.sendMessage(m.chat, textMessage, { quoted: m });
-          }
-        }
-        break;
-      }
-
-      // Test Interactive Message
-      case 'testinteractive': {
-        if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
-        
-        const interactiveButtons = [
-          {
-            name: "quick_reply",
-            buttonParamsJson: JSON.stringify({
-              display_text: "Quick Reply",
-              id: "quick_reply_1"
-            })
-          },
-          {
-            name: "cta_url",
-            buttonParamsJson: JSON.stringify({
-              display_text: "Visit Website",
-              url: "https://github.com/nstar-y/Bail"
-            })
-          },
-          {
-            name: "cta_copy",
-            buttonParamsJson: JSON.stringify({
-              display_text: "Copy Code",
-              id: "copy_code_1",
-              copy_code: "BAILEYS-V7-2025"
-            })
-          }
-        ];
-
-        const interactiveMessage = {
-          text: "⚡ *Test Interactive Message*\n\nIni adalah testing fitur interactive message dengan berbagai jenis button dan AI icon!",
-          title: "Interactive Message Test",
-          footer: `© ${global.botName} - Baileys v7 features`,
-          interactiveButtons,
-          ai: true
-        };
-
-        await client.sendMessage(m.chat, interactiveMessage, { quoted: m });
-        break;
-      }
-
       // Test AI Icon Feature
       case 'testai': {
         if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
@@ -1563,55 +1442,105 @@ break;
         break;
       }
 
-      // Test Album Message with AI
-      case 'testalbum': {
-        if (!isOwner) return m.reply('❌ Hanya owner yang bisa menggunakan command ini.');
-        
-        const caption = "🖼️ *Test Album Message*\n\nIni adalah testing fitur album message dengan AI icon!";
-        
-        try {
-          // First try with direct URL approach
-          const media = [
-            { image: { url: global.testAlbumImg1 } },
-            { image: { url: global.testAlbumImg2 } }
-          ];
-
-          await client.sendMessage(m.chat, { 
-            album: media, 
-            caption: caption,
-            ai: true
-          }, { quoted: m });
-        } catch (error) {
-          console.log('❌ Direct URL album failed, trying buffer approach:', error.message);
-          
-          try {
-            // Fallback: Try with buffer approach (as per Baileys v7 docs)
-            const media = [
-              { image: await getBuffer(global.testAlbumImg1) },
-              { image: await getBuffer(global.testAlbumImg2) }
-            ];
-
-            await client.sendMessage(m.chat, { 
-              album: media, 
-              caption: caption + "\n\n*⚠️ Loaded via buffer fallback*",
-              ai: true
-            }, { quoted: m });
-          } catch (bufferError) {
-            console.log('❌ Buffer album approach failed:', bufferError.message);
-            
-            // Ultimate fallback: text only
-            await client.sendMessage(m.chat, {
-              text: caption + "\n\n⚠️ *Album images could not be loaded due to rate limiting or network issues*\n\nThis should have shown multiple images in one message.",
-              ai: true
-            }, { quoted: m });
-          }
-        }
-        
-        break;
-      }
 
       // Test Pay/Payment - Working example dari struktur lama
-      
+      case 'tpo': 
+        case 'qr':
+        case 'scan': {
+          // Simple QRIS Generator - Generate dynamic QRIS payment
+          if (!args[0]) {
+            return m.reply(`❌ Format salah!\n\nContoh:\n${prefix}qr 5000\n${prefix}qr 10000\n\nMinimal: Rp 1.000\nMaksimal: Rp 10.000.000`);
+          }
+
+          const amount = parseInt(args[0]);
+          
+          // Validasi amount
+          if (isNaN(amount)) {
+            return m.reply('❌ Jumlah harus berupa angka!\n\nContoh: .qr 5000');
+          }
+          
+          if (amount < 1000) {
+            return m.reply('❌ Jumlah minimal Rp 1.000');
+          }
+          
+          if (amount > 10000000) {
+            return m.reply('❌ Jumlah maksimal Rp 10.000.000');
+          }
+
+          // Generate unique code untuk payment
+          const uniqueCode = Math.floor(Math.random() * 100) + 1;
+          const totalAmount = amount + uniqueCode;
+          const ref_id = generateUniqueRefID();
+
+          m.reply('🔄 Generating QRIS code...');
+
+          try {
+            // Generate QRIS via simplebot API
+            const pay = await axios.get(`https://restapi.simplebot.my.id/orderkuota/createpayment?apikey=new&amount=${totalAmount}&codeqr=${codeqr}`, {
+              timeout: 15000 // 15 second timeout
+            });
+            
+            console.log('QRIS API Response:', pay.data); // Debug log
+            
+            if (!pay.data?.result?.imageqris?.url) {
+              throw new Error('Gagal mendapatkan URL gambar QRIS dari API.');
+            }
+            
+            const qrisUrl = pay.data.result.imageqris.url;
+            const now = moment2.tz('Asia/Jakarta');
+            const expireAt = now.clone().add(5, 'minutes');
+            const expiredText = expireAt.format('HH:mm:ss');
+
+            const caption = `╭─────〔 *QRIS PAYMENT* 〕─────
+│
+│ 📋 *Ref ID:* ${ref_id}
+│ 💰 *Amount:* Rp ${amount.toLocaleString('id-ID')}
+│ 🔢 *Kode Unik:* +Rp ${uniqueCode}
+│ 💳 *Total Bayar:* *Rp ${totalAmount.toLocaleString('id-ID')}*
+│
+│ ⏰ *Kadaluwarsa:* ${expiredText} WIB
+│ 📱 *Status:* Menunggu Pembayaran
+│
+╰────────────────────────
+
+⚠️ *PENTING:*
+Scan QRIS di atas menggunakan:
+• Mobile Banking
+• E-Wallet (Dana, OVO, Gopay, ShopeePay)
+
+Transfer tepat sesuai nominal *Total Bayar* agar terdeteksi otomatis!`;
+
+            await client.sendMessage(m.chat, {
+              image: { url: qrisUrl },
+              caption: caption
+            }, { quoted: m });
+
+            // Optional: Save ke Firestore jika ada
+            if (db) {
+              try {
+                const nomor = sender.split("@")[0];
+                await db.collection('transactions').doc(ref_id).set({
+                  nomor: nomor,
+                  ref_id: ref_id,
+                  amount: amount,
+                  kode_unik: uniqueCode,
+                  total_bayar: totalAmount,
+                  status: 'waiting',
+                  metode: 'QRIS',
+                  created_at: admin.firestore.FieldValue.serverTimestamp(),
+                  expires_at: expireAt.toDate()
+                });
+              } catch (err) {
+                console.log('⚠️ Firestore save failed (optional):', err.message);
+              }
+            }
+
+          } catch (error) {
+            console.error('Error generating QRIS:', error);
+            m.reply('❌ Gagal generate QRIS code. Silakan coba lagi.');
+          }
+        }
+        break;
 
       default:
     }
