@@ -3,7 +3,8 @@ let autoGetLayanan = false;
 let intervalId;
 let antilinkEnabled = false;
 
-const { BufferJSON, WA_DEFAULT_EPHEMERAL, makeWASocket, useMultiFileAuthState, getAggregateVotesInPollMessage, generateWAMessageFromContent, proto, generateWAMessageContent, generateWAMessage, prepareWAMessageMedia, downloadContentFromMessage, areJidsSameUser, getContentType } = require("@whiskeysockets/baileys")
+// Baileys variables (loaded dynamically by index.js via global)
+// Untuk compatibility dengan ESM package
 const fs = require('fs')
 const pino = require('pino')
 let defaultMarkupPercentage = 0.01; 
@@ -48,6 +49,13 @@ const { exec, spawn, execSync } = require("child_process")
 const { smsg, tanggal, getTime, isUrl, sleep, clockString, runtime, fetchJson, getBuffer, jsonformat, format, parseMention, getRandom, getGroupAdmins, generateUniqueRefID, connect, isPnUser, isLidUser, normalizeJid, getUserId, formatPhoneNumber, isOwnerCheck } = require('./lib/myfunc')
 module.exports = client = async (client, m, chatUpdate, store, db_respon_list) => {
   try {
+      // Dynamic import Baileys untuk ESM compatibility
+      const baileys = await import('@whiskeysockets/baileys');
+      const { BufferJSON, WA_DEFAULT_EPHEMERAL, getAggregateVotesInPollMessage, 
+              generateWAMessageFromContent, proto, generateWAMessageContent, 
+              generateWAMessage, prepareWAMessageMedia, downloadContentFromMessage, 
+              areJidsSameUser, getContentType } = baileys;
+      
       console.log('🔍 NEKO.JS: Message received from', m.key?.remoteJid || 'unknown'); // Debug log
       
       // Skip if message is from bot itself (prevent loop)
@@ -71,7 +79,7 @@ module.exports = client = async (client, m, chatUpdate, store, db_respon_list) =
       const ms = require('parse-ms');
       const fetch = require('node-fetch');
       const { createCanvas, loadImage } = require("canvas");
-      const { prepareWAMessageMedia } = require('@whiskeysockets/baileys');
+      // prepareWAMessageMedia loaded dynamically below
       const moment2 = require('moment-timezone');
       const QRCode = require('qrcode');
     let localUserData = [];

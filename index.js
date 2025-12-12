@@ -5,7 +5,9 @@ if (!global.crypto) {
 }
 
 require('./db/config')
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestWaWebVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, /*makeInMemoryStore,*/ jidDecode, getAggregateVotesInPollMessage, proto } = require("@whiskeysockets/baileys")
+// Dynamic import for Baileys ESM package (Node 22.8.0 compatibility)
+let makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestWaWebVersion, generateForwardMessageContent, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, jidDecode, getAggregateVotesInPollMessage, proto;
+
 const fs = require('fs')
 const pino = require('pino')
 const chalk = require('chalk')
@@ -88,8 +90,30 @@ CFonts.say(
     align: "center",
   },
 );
-console.log(color(`INFO:`, "gold"), color(`\n-`, "gold"), color(`Jika code tidak muncul enter 1-2x lagi`, "red"), color(`\n-`, "gold"), color(`Format nomor diawali dengan 62..., bukan 08...`, "red"))
+console.log(color(`INFO:`, "gold"), color(`\n-`, "gold"), color(`Jika code tidak muncul enter 1-2x lagi`, "red"), color(`\n-`, "gold"), color(`Format nomor diawali dengan 62..., bukan 08...`, "red"));
 //=================================================//
+
+// Wrap main code dalam async IIFE untuk dynamic import
+(async () => {
+  // Dynamic import Baileys (ESM package)
+  const baileys = await import('@whiskeysockets/baileys');
+  makeWASocket = baileys.default;
+  useMultiFileAuthState = baileys.useMultiFileAuthState;
+  DisconnectReason = baileys.DisconnectReason;
+  fetchLatestWaWebVersion = baileys.fetchLatestWaWebVersion;
+  generateForwardMessageContent = baileys.generateForwardMessageContent;
+  prepareWAMessageMedia = baileys.prepareWAMessageMedia;
+  generateWAMessageFromContent = baileys.generateWAMessageFromContent;
+  generateMessageID = baileys.generateMessageID;
+  downloadContentFromMessage = baileys.downloadContentFromMessage;
+  jidDecode = baileys.jidDecode;
+  getAggregateVotesInPollMessage = baileys.getAggregateVotesInPollMessage;
+  proto = baileys.proto;
+
+  // Initialize myfunc Baileys functions
+  const { initBaileys } = require('./lib/myfunc');
+  await initBaileys();
+
 async function connectToWhatsApp() {
 const { state, saveCreds } = await useMultiFileAuthState(global.sessionName)
 
@@ -370,11 +394,20 @@ start(`1`,`Connecting...`)
 });
 return client
 }
-connectToWhatsApp()
-let file = require.resolve(__filename)
-fs.watchFile(file, () => {
-fs.unwatchFile(file)
-console.log(chalk.redBright(`Update ${__filename}`))
-delete require.cache[file]
-require(file)
-})
+
+  // Jalankan bot
+  await connectToWhatsApp();
+  
+  // File watcher untuk auto-restart
+  let file = require.resolve(__filename)
+  fs.watchFile(file, () => {
+    fs.unwatchFile(file)
+    console.log(chalk.redBright(`Update ${__filename}`))
+    delete require.cache[file]
+    require(file)
+  })
+
+})().catch(err => {
+  console.error('Fatal error loading Baileys:', err);
+  process.exit(1);
+});
