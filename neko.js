@@ -1440,116 +1440,116 @@ break;
       }
 
 
-      // Test Pay/Payment - Working example dari struktur lama
-      case 'tpo': 
-        case 'qr':
-        case 'scan': {
-          // Simple QRIS Generator - Generate dynamic QRIS payment
-          if (!args[0]) {
-            return m.reply(`❌ Format salah!\n\nContoh:\n${prefix}qr 5000\n${prefix}qr 10000\n\nMinimal: Rp 1.000\nMaksimal: Rp 10.000.000`);
-          }
+//       // Test Pay/Payment - Working example dari struktur lama
+//       case 'tpo': 
+//         case 'qr':
+//         case 'scan': {
+//           // Simple QRIS Generator - Generate dynamic QRIS payment
+//           if (!args[0]) {
+//             return m.reply(`❌ Format salah!\n\nContoh:\n${prefix}qr 5000\n${prefix}qr 10000\n\nMinimal: Rp 1.000\nMaksimal: Rp 10.000.000`);
+//           }
 
-          const amount = parseInt(args[0]);
+//           const amount = parseInt(args[0]);
           
-          // Validasi amount
-          if (isNaN(amount)) {
-            return m.reply('❌ Jumlah harus berupa angka!\n\nContoh: .qr 5000');
-          }
+//           // Validasi amount
+//           if (isNaN(amount)) {
+//             return m.reply('❌ Jumlah harus berupa angka!\n\nContoh: .qr 5000');
+//           }
           
-          if (amount < 1000) {
-            return m.reply('❌ Jumlah minimal Rp 1.000');
-          }
+//           if (amount < 1000) {
+//             return m.reply('❌ Jumlah minimal Rp 1.000');
+//           }
           
-          if (amount > 10000000) {
-            return m.reply('❌ Jumlah maksimal Rp 10.000.000');
-          }
+//           if (amount > 10000000) {
+//             return m.reply('❌ Jumlah maksimal Rp 10.000.000');
+//           }
 
-          // Generate unique code untuk payment
-          const uniqueCode = Math.floor(Math.random() * 100) + 1;
-          const totalAmount = amount + uniqueCode;
-          const ref_id = generateUniqueRefID();
+//           // Generate unique code untuk payment
+//           const uniqueCode = Math.floor(Math.random() * 100) + 1;
+//           const totalAmount = amount + uniqueCode;
+//           const ref_id = generateUniqueRefID();
 
-          m.reply('🔄 Generating QRIS code...');
+//           m.reply('🔄 Generating QRIS code...');
 
-          try {
-            // Generate QRIS via simplebot API
-            const pay = await axios.get(`https://restapi.simplebot.my.id/orderkuota/createpayment?apikey=new&amount=${totalAmount}&codeqr=${codeqr}`, {
-              timeout: 15000 // 15 second timeout
-            });
+//           try {
+//             // Generate QRIS via simplebot API
+//             const pay = await axios.get(`https://restapi.simplebot.my.id/orderkuota/createpayment?apikey=new&amount=${totalAmount}&codeqr=${codeqr}`, {
+//               timeout: 15000 // 15 second timeout
+//             });
             
-            console.log('QRIS API Response:', pay.data); // Debug log
+//             console.log('QRIS API Response:', pay.data); // Debug log
             
-            if (!pay.data?.result?.imageqris?.url) {
-              throw new Error('Gagal mendapatkan URL gambar QRIS dari API.');
-            }
+//             if (!pay.data?.result?.imageqris?.url) {
+//               throw new Error('Gagal mendapatkan URL gambar QRIS dari API.');
+//             }
             
-            const qrisUrl = pay.data.result.imageqris.url;
-            const apiRefId = pay.data.result.idtransaksi;
-            const apiExpired = pay.data.result.expired;
+//             const qrisUrl = pay.data.result.imageqris.url;
+//             const apiRefId = pay.data.result.idtransaksi;
+//             const apiExpired = pay.data.result.expired;
             
-            // Download image as buffer to avoid pixhost timeout
-            console.log('Downloading QRIS image from:', qrisUrl);
-            const imageResponse = await axios.get(qrisUrl, { 
-              responseType: 'arraybuffer',
-              timeout: 30000 // 30 seconds
-            });
-            const imageBuffer = Buffer.from(imageResponse.data, 'binary');
+//             // Download image as buffer to avoid pixhost timeout
+//             console.log('Downloading QRIS image from:', qrisUrl);
+//             const imageResponse = await axios.get(qrisUrl, { 
+//               responseType: 'arraybuffer',
+//               timeout: 30000 // 30 seconds
+//             });
+//             const imageBuffer = Buffer.from(imageResponse.data, 'binary');
             
-            const now = moment2.tz('Asia/Jakarta');
-            const expireAt = now.clone().add(5, 'minutes');
-            const expiredText = expireAt.format('HH:mm:ss');
+//             const now = moment2.tz('Asia/Jakarta');
+//             const expireAt = now.clone().add(5, 'minutes');
+//             const expiredText = expireAt.format('HH:mm:ss');
 
-            const caption = `╭─────〔 *QRIS PAYMENT* 〕─────
-│
-│ 📋 *Ref ID:* ${ref_id}
-│ 🆔 *API ID:* ${apiRefId}
-│ 💰 *Amount:* Rp ${amount.toLocaleString('id-ID')}
-│ 🔢 *Kode Unik:* +Rp ${uniqueCode}
-│ 💳 *Total Bayar:* *Rp ${totalAmount.toLocaleString('id-ID')}*
-│
-│ ⏰ *Kadaluwarsa:* ${expiredText} WIB
-│ 📱 *Status:* Menunggu Pembayaran
-│
-╰────────────────────────
+//             const caption = `╭─────〔 *QRIS PAYMENT* 〕─────
+// │
+// │ 📋 *Ref ID:* ${ref_id}
+// │ 🆔 *API ID:* ${apiRefId}
+// │ 💰 *Amount:* Rp ${amount.toLocaleString('id-ID')}
+// │ 🔢 *Kode Unik:* +Rp ${uniqueCode}
+// │ 💳 *Total Bayar:* *Rp ${totalAmount.toLocaleString('id-ID')}*
+// │
+// │ ⏰ *Kadaluwarsa:* ${expiredText} WIB
+// │ 📱 *Status:* Menunggu Pembayaran
+// │
+// ╰────────────────────────
 
-⚠️ *PENTING:*
-Scan QRIS di atas menggunakan:
-• Mobile Banking
-• E-Wallet (Dana, OVO, Gopay, ShopeePay)
+// ⚠️ *PENTING:*
+// Scan QRIS di atas menggunakan:
+// • Mobile Banking
+// • E-Wallet (Dana, OVO, Gopay, ShopeePay)
 
-Transfer tepat sesuai nominal *Total Bayar* agar terdeteksi otomatis!`;
+// Transfer tepat sesuai nominal *Total Bayar* agar terdeteksi otomatis!`;
 
-            await client.sendMessage(m.chat, {
-              image: imageBuffer,
-              caption: caption
-            }, { quoted: m });
+//             await client.sendMessage(m.chat, {
+//               image: imageBuffer,
+//               caption: caption
+//             }, { quoted: m });
 
-            // Optional: Save ke Firestore jika ada
-            if (db) {
-              try {
-                const nomor = sender.split("@")[0];
-                await db.collection('transactions').doc(ref_id).set({
-                  nomor: nomor,
-                  ref_id: ref_id,
-                  amount: amount,
-                  kode_unik: uniqueCode,
-                  total_bayar: totalAmount,
-                  status: 'waiting',
-                  metode: 'QRIS',
-                  created_at: admin.firestore.FieldValue.serverTimestamp(),
-                  expires_at: expireAt.toDate()
-                });
-              } catch (err) {
-                console.log('⚠️ Firestore save failed (optional):', err.message);
-              }
-            }
+//             // Optional: Save ke Firestore jika ada
+//             if (db) {
+//               try {
+//                 const nomor = sender.split("@")[0];
+//                 await db.collection('transactions').doc(ref_id).set({
+//                   nomor: nomor,
+//                   ref_id: ref_id,
+//                   amount: amount,
+//                   kode_unik: uniqueCode,
+//                   total_bayar: totalAmount,
+//                   status: 'waiting',
+//                   metode: 'QRIS',
+//                   created_at: admin.firestore.FieldValue.serverTimestamp(),
+//                   expires_at: expireAt.toDate()
+//                 });
+//               } catch (err) {
+//                 console.log('⚠️ Firestore save failed (optional):', err.message);
+//               }
+//             }
 
-          } catch (error) {
-            console.error('Error generating QRIS:', error);
-            m.reply('❌ Gagal generate QRIS code. Silakan coba lagi.');
-          }
-        }
-        break;
+//           } catch (error) {
+//             console.error('Error generating QRIS:', error);
+//             m.reply('❌ Gagal generate QRIS code. Silakan coba lagi.');
+//           }
+//         }
+//         break;
 
       default:
     }
