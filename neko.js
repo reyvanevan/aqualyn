@@ -432,13 +432,10 @@ if (m.isGroup && !m.key.fromMe) {
     }
 }    
       
-/*      // Middleware: Blok command kalau bukan dari grup, kecuali owner
-if (!m.isGroup && !global.owner.includes(m.sender.split("@")[0])) {
-  return; // Langsung stop, tanpa balasan apapun
-}*/
-      // middleware semua command di private chat, kecuali admin/owner
-      if (!m.isGroup && ! global.owner.includes(m.sender.split("@")[0])) {
-          return;
+      // Middleware: Blok semua command di private chat, kecuali owner
+      // Gunakan isOwner yang udah di-compute dengan LID support
+      if (!m.isGroup && !isOwner) {
+          return; // Langsung stop tanpa response
       }
       
       //  Middleware untuk blokir command berdasarkan config grup
